@@ -1,0 +1,13 @@
+.git
+docs
+lib
+.dockerignore
+.DS_Store
+.gitignore
+.rsyncignore
+dev
+dev.config.sh
+docker-compose.tmpl
+docker-compose.yml
+Dockerfile
+README.md

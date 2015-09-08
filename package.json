@@ -1,0 +1,26 @@
+{
+  "name": "generator-dockerize",
+  "version": "1.0.0",
+  "description": "Yeoman Generator for Docker Application",
+  "main": "app/index.js",
+  "keywords": [
+    "yeoman-generator",
+    "docker"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atomantic/yo-generator-dockerize.git"
+  },
+  "files": [
+    "app",
+    "router"
+  ],
+  "author": "Adam Eivy",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^1.1.1",
+    "lodash-node": "^3.10.1",
+    "yeoman-generator": "^0.20.3",
+    "yosay": "^1.0.5"
+  }
+}
