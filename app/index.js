@@ -62,6 +62,10 @@ module.exports = yeoman.generators.Base.extend({
 
   writing: {
     provision: function() {
+
+      this.fs.makedir('app');
+      this.fs.makedir('lib');
+
       this.fs.copy(
         this.templatePath('templates/.dockerignore'),
         this.destinationPath('.dockerignore')
@@ -118,6 +122,10 @@ module.exports = yeoman.generators.Base.extend({
       this.fs.copy(
         this.templatePath('templates/.rsyncignore'),
         this.destinationPath('app/.rsyncignore')
+      );
+      this.fs.copy(
+        this.templatePath('templates/exec'),
+        this.destinationPath('app/exec')
       );
 
     }

@@ -35,6 +35,9 @@ yo dockerize
 
 ## Scaffolding Contents
 
+* ./app/.rsyncignore
+* ./app/exec
+  * you will likely need to edit this to run your actual app
 * .dockerignore
 * .env
 * dev
@@ -50,6 +53,7 @@ yo dockerize
 # Getting Started
 
 1. run `yo dockerize` on your project
-2. run `dev init`
+2. edit `./app/exec` to have proper app execute instructions
+3. run `dev init`
 
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
