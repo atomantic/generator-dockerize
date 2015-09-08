@@ -21,10 +21,7 @@ else
 fi
 ```
 * your docker app is a single web app with a memcached docker container connected to it
-  * this can easily be modified after initial scaffolding by editing `docker-compose.yml`
-* Your app will build with centos:7 as the default base
-  * you can edit your dockerfile after scaffolding finishes :)
-  * also, feel free to pull request this as a question at scaffolding time
+  * this can easily be modified after initial scaffolding by editing `docker-compose.tmpl`
 
 ## Usage
 
