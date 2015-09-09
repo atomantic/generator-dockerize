@@ -70,22 +70,22 @@ module.exports = yeoman.generators.Base.extend({
       mkdirp('lib');
 
       this.fs.copy(
-        this.templatePath('templates/.dockerignore'),
+        this.templatePath('.dockerignore'),
         this.destinationPath('.dockerignore')
       );
       this.fs.copy(
-        this.templatePath('templates/.env'),
+        this.templatePath('.env'),
         this.destinationPath('.env'),
         {
           internalPort: this.internalPort
         }
       );
       this.fs.copy(
-        this.templatePath('templates/dev'),
+        this.templatePath('dev'),
         this.destinationPath('dev')
       );
       this.fs.copyTpl(
-        this.templatePath('templates/dev.config.sh'),
+        this.templatePath('dev.config.sh'),
         this.destinationPath('dev.config.sh'),
         {
           appname: this.appname,
@@ -95,7 +95,7 @@ module.exports = yeoman.generators.Base.extend({
         }
       );
       this.fs.copyTpl(
-        this.templatePath('templates/docker-compose.tmpl'),
+        this.templatePath('docker-compose.tmpl'),
         this.destinationPath('docker-compose.tmpl'),
         {
           externalPort: this.externalPort,
@@ -103,11 +103,11 @@ module.exports = yeoman.generators.Base.extend({
         }
       );
       this.fs.copy(
-        this.templatePath('templates/docker.sh'),
+        this.templatePath('docker.sh'),
         this.destinationPath('lib/docker.sh')
       );
       this.fs.copyTpl(
-        this.templatePath('templates/Dockerfile'),
+        this.templatePath('Dockerfile'),
         this.destinationPath('Dockerfile'),
         {
           internalPort: this.internalPort,
@@ -115,19 +115,19 @@ module.exports = yeoman.generators.Base.extend({
         }
       );
       this.fs.copy(
-        this.templatePath('templates/libecho.sh'),
+        this.templatePath('libecho.sh'),
         this.destinationPath('lib/libecho.sh')
       );
       this.fs.copy(
-        this.templatePath('templates/libinstall.sh'),
+        this.templatePath('libinstall.sh'),
         this.destinationPath('lib/libinstall.sh')
       );
       this.fs.copy(
-        this.templatePath('templates/.rsyncignore'),
+        this.templatePath('.rsyncignore'),
         this.destinationPath('app/.rsyncignore')
       );
       this.fs.copy(
-        this.templatePath('templates/exec'),
+        this.templatePath('exec'),
         this.destinationPath('app/exec')
       );
 
