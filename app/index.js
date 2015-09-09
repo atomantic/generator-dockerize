@@ -2,6 +2,7 @@ var _ = require('lodash-node');
 var yeoman = require('yeoman-generator');
 var chalk = require('chalk');
 var yosay = require('yosay');
+var mkdirp = require('mkdirp');
 
 module.exports = yeoman.generators.Base.extend({
   initializing: function() {
@@ -65,8 +66,8 @@ module.exports = yeoman.generators.Base.extend({
   writing: {
     provision: function() {
       'use strict';
-      this.fs.makedir('app');
-      this.fs.makedir('lib');
+      mkdirp('app');
+      mkdirp('lib');
 
       this.fs.copy(
         this.templatePath('templates/.dockerignore'),
