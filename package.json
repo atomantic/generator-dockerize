@@ -1,6 +1,6 @@
 {
   "name": "generator-dockerize",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Yeoman Generator for Docker Application",
   "main": "app/index.js",
   "keywords": [
@@ -9,7 +9,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/atomantic/yo-generator-dockerize.git"
+    "url": "git+https://github.com/atomantic/generator-dockerize.git"
   },
   "files": [
     "app",

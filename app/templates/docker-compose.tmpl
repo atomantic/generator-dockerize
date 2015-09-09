@@ -1,7 +1,7 @@
 web:
   build: .
   ports:
-   - "<%= external_port %>:<%= internal_port %>"
+   - "<%= externalPort %>:<%= internalPort %>"
   volumes:
    - /rsync_PWD_:/app
   env_file: .env

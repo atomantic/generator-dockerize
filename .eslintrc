@@ -1,0 +1,9 @@
+{
+  "env": {
+    "node": true
+  },
+  "globals": {},
+  "rules": {
+    "quotes": [2, "single"]
+  }
+}
