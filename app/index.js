@@ -73,7 +73,7 @@ module.exports = yeoman.generators.Base.extend({
         this.templatePath('.dockerignore'),
         this.destinationPath('.dockerignore')
       );
-      this.fs.copy(
+      this.fs.copyTpl(
         this.templatePath('.env'),
         this.destinationPath('.env'),
         {

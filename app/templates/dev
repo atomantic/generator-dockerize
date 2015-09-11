@@ -111,12 +111,6 @@ case "$1" in
           fi
         fi
 
-        cd app;
-        bot 'running npm install'
-        npm install -s;
-        ok
-        cd -;
-
         # setup docker-compose.yml
         cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"/app~" > docker-compose.yml
 
