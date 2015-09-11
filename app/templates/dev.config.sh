@@ -6,4 +6,4 @@ export APP_PORT_INTERNAL=<%= internalPort %>
 export APP_BOOT_TIME=<%= appBootTime %>
 export VM_NAME="dockerized-vm"
 export DOCKER_REPO="<%= dockerHub %>"
-export VM_CREATE_TIME=<%= vmCreateTIme %>
+export VM_CREATE_TIME=<%= vmCreateTime %>
