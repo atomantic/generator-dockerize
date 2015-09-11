@@ -22,7 +22,8 @@ source ./lib/libinstall.sh
 # functional libraries for docker management
 source ./lib/docker.sh
 
-APP_NAME_LOCAL=$APP_NAME"_web"
+# docker-compose will strip underscores from the app name to tack on _web
+APP_NAME_LOCAL=${APP_NAME//_/}"_web"
 REMOTE_NAME="$DOCKER_REPO/$APP_ORG/$APP_NAME"
 
 bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
