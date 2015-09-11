@@ -13,15 +13,15 @@
 function dockerStart(){
 
     # still working on VPN fix
-    #ensurePort $APP_PORT
+    #ensurePort $APP_PORT_EXTERNAL
     #ensureMount
     running "starting rsync into $VM_NAME"
     startRsync
     ok
 
-    APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT
-    # instead of loading the VBox IP, we are routing localhost:$APP_PORT to VM
-    # APPURL=http://localhost:$APP_PORT
+    APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
+    # instead of loading the VBox IP, we are routing localhost:$APP_PORT_EXTERNAL to VM
+    # APPURL=http://localhost:$APP_PORT_EXTERNAL
 
     running "starting via 'docker-compose up'"
     docker-compose up &
@@ -35,9 +35,8 @@ function dockerStart(){
     fi
 
     # load in browser
-    #docker run -p $APP_PORT:3000 -v /app_$APP_NAME:/app_$APP_NAME -e "MEMCACHED=true" -e "APP_ENV=LOCAL" -e "NR_APP_ID=DID-$APP_NAME-DEV" $APP_NAME_LOCAL sh -c 'cd app_'$APP_NAME' && pm2 start process.dev.json && pm2 logs' &
     bot "OK, the app is booting up, we need to wait just a bit before trying to load it..."
-    for i in {15..1};do
+    for i in $(seq $APP_BOOT_TIME 1);do
       bot "$i...";
     sleep 1;
     done
@@ -46,13 +45,13 @@ function dockerStart(){
 
       bot "Launching: $APPURL"
       bot "If the app doesn't work, you can debug it by running the following:\n\$(docker-machine env $VM_NAME > /dev/null);\ndocker exec -i -t \$(docker ps | grep $APP_NAME_LOCAL | awk '{print $1;}') bash"
-      # open $APPURL:$APP_PORT
+      # open $APPURL:$APP_PORT_EXTERNAL
       open $APPURL
 
     fi
 }
 
-# setup port forwarding localhost:$APP_PORT -> VirtualBox
+# setup port forwarding localhost:$APP_PORT_EXTERNAL -> VirtualBox
 function ensurePort(){
   running "ensuring port forwarding: "$APP_NAME_LOCAL"_"$1
   VBoxManage showvminfo $VM_NAME | grep $APP_NAME_LOCAL"_"$1 > /dev/null 2>&1
@@ -106,9 +105,6 @@ function ensureDocker() {
       action "$VM_NAME vm does not exist. Creating it"
 
       docker-machine --debug create -d virtualbox $VM_NAME
-
-      # make sure we can push/pull on internal registry (with self-signed cert)
-      docker-machine ssh $VM_NAME 'sudo sh -c "echo \"EXTRA_ARGS=\\\"--insecure-registry docker-reg.cloud.corp.dig.com:5000\\\"\" > /var/lib/boot2docker/profile && sudo /etc/init.d/docker restart"'
     fi
     docker-machine ls | grep $VM_NAME | grep Running > /dev/null 2>&1
     if [[ $? != 0 ]]; then

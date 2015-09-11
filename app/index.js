@@ -9,7 +9,7 @@ module.exports = yeoman.generators.Base.extend({
     'use strict';
     this.pkg = require('../package.json');
   },
-
+  userData: {},
   prompting: function() {
     'use strict';
     var done = this.async();
@@ -46,6 +46,16 @@ module.exports = yeoman.generators.Base.extend({
         default: 3000
       }, {
         type: 'input',
+        name: 'appBootTime',
+        message: 'How many seconds does your app take to start?',
+        default: 25
+      }, {
+        type: 'input',
+        name: 'vmCreateTime',
+        message: 'About how many seconds does your docker image take to build (you can edit this later in dev.config.sh)?',
+        default: 240
+      }, {
+        type: 'input',
         name: 'fromOS',
         message: 'What base OS does your app build with?',
         default: 'centos:7'
@@ -53,12 +63,17 @@ module.exports = yeoman.generators.Base.extend({
     ];
 
     this.prompt(prompts, function(props) {
-      this.appname = props.appname;
-      this.org = props.org;
-      this.externalPort = parseInt(_.random(3, 9) + '' + _.random(0, 9) + '' + _.random(0, 9) + '' + _.random(0, 9), 10);
-      this.internalPort = parseInt(props.port, 10);
-      this.dockerHub = props.dockerHub;
-      this.fromOS = props.fromOS;
+      this.userData = {
+        appname: props.appname,
+        org: props.org,
+        externalPort: parseInt(_.random(3, 9) + '' + _.random(0, 9) + '' + _.random(0, 9) + '' + _.random(0, 9), 10),
+        internalPort: parseInt(props.port, 10),
+        dockerHub: props.dockerHub,
+        fromOS: props.fromOS,
+        appBootTime: props.appBootTime,
+        vmCreateTime: props.vmCreateTime
+      };
+
       done();
     }.bind(this));
   },
@@ -76,9 +91,7 @@ module.exports = yeoman.generators.Base.extend({
       this.fs.copyTpl(
         this.templatePath('.env'),
         this.destinationPath('.env'),
-        {
-          internalPort: this.internalPort
-        }
+        this.userData
       );
       this.fs.copy(
         this.templatePath('dev'),
@@ -87,20 +100,12 @@ module.exports = yeoman.generators.Base.extend({
       this.fs.copyTpl(
         this.templatePath('dev.config.sh'),
         this.destinationPath('dev.config.sh'),
-        {
-          appname: this.appname,
-          org: this.org,
-          externalPort: this.externalPort,
-          dockerHub: this.dockerHub
-        }
+        this.userData
       );
       this.fs.copyTpl(
         this.templatePath('docker-compose.tmpl'),
         this.destinationPath('docker-compose.tmpl'),
-        {
-          externalPort: this.externalPort,
-          internalPort: this.internalPort
-        }
+        this.userData
       );
       this.fs.copy(
         this.templatePath('docker.sh'),
@@ -109,10 +114,7 @@ module.exports = yeoman.generators.Base.extend({
       this.fs.copyTpl(
         this.templatePath('Dockerfile'),
         this.destinationPath('Dockerfile'),
-        {
-          internalPort: this.internalPort,
-          fromOS: this.fromOS
-        }
+        this.userData
       );
       this.fs.copy(
         this.templatePath('libecho.sh'),
