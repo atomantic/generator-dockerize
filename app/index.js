@@ -139,7 +139,8 @@ module.exports = yeoman.generators.Base.extend({
       '\n\n' +
       chalk.green('\\[._.]/\n') +
       'All done!\n' +
-      'Go ahead and run\n' +
+      'Edit the Dockerfile, app/exec and docker-compose.tml as needed!\n' +
+      'Then run\n' +
       chalk.cyan('./dev init') + '\n' +
       'to bootstrap your docker environment!'
     );
