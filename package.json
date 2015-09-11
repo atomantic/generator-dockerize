@@ -1,6 +1,6 @@
 {
   "name": "generator-dockerize",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Yeoman Generator for Docker Application",
   "main": "app/index.js",
   "keywords": [
@@ -23,9 +23,6 @@
     "mkdirp": "^0.5.1",
     "yeoman-generator": "^0.20.3",
     "yosay": "^1.0.5"
-  },
-  "peerDependencies": {
-    "yo": ">=1.0.0"
   },
   "engines": {
     "node": ">=0.10.0"
