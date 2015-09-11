@@ -34,7 +34,8 @@ yo dockerize
 
 * ./app/.rsyncignore
 * ./app/exec
-  * you will likely need to edit this to run your actual app
+  * edit this after running `yo dockerize` to have instructions for running your app
+  * whatever you run here should be a foreground non-exiting process
 * .dockerignore
 * .env
 * dev
@@ -46,11 +47,14 @@ yo dockerize
 * lib/libecho.sh
 * lib/libinstall.sh
 * Dockerfile
+  * you will need to update this file with your app installation instructions
 
 # Getting Started
 
 1. run `yo dockerize` on your project
 2. edit `./app/exec` to have proper app execute instructions
-3. run `dev init`
+3. edit `docker-compose.tmpl` if needed (probably)
+4. edit the Dockerfile as needed
+5. run `dev init`
 
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
