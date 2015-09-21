@@ -10,21 +10,308 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# v1.0.1                                  #
+# v1.1.0                                  #
 ###########################################
 
 # project specific config
 source ./dev.config.sh
-# include library helpers for colorized echo/bot
-source ./lib/libecho.sh
-# and installers
-source ./lib/libinstall.sh
-# functional libraries for docker management
-source ./lib/docker.sh
 
 # docker-compose will strip underscores from the app name to tack on _web
 APP_NAME_LOCAL=${APP_NAME//_/}"_web"
 REMOTE_NAME="$DOCKER_REPO/$APP_ORG/$APP_NAME"
+
+###
+# echo helper functions
+###
+# Colors
+ESC_SEQ="\x1b["
+COL_RESET=$ESC_SEQ"39;49;00m"
+COL_RED=$ESC_SEQ"31;01m"
+COL_GREEN=$ESC_SEQ"32;01m"
+COL_YELLOW=$ESC_SEQ"33;01m"
+COL_BLUE=$ESC_SEQ"34;01m"
+COL_MAGENTA=$ESC_SEQ"35;01m"
+COL_CYAN=$ESC_SEQ"36;01m"
+
+function ok() {
+    echo -e "$COL_GREEN[ok]$COL_RESET "$1
+}
+
+function bot() {
+    echo
+    echo -e "$COL_GREEN\[._.]/$COL_RESET - "$1
+}
+
+function running() {
+    echo
+    echo -en " ⇒ "$1"..."
+}
+
+function action() {
+    echo -e "$COL_YELLOW[action]$COL_RESET"
+    echo -en " ⇒ "$1"..."
+}
+
+function warn() {
+    echo -e "$COL_YELLOW[warning]$COL_RESET "$1
+}
+
+function error() {
+    echo -e "$COL_RED[error]$COL_RESET "$1
+}
+
+###
+# some bash install helpers
+###
+function require_cask() {
+    running "which $1"
+    which $1 > /dev/null 2>&1 | true
+    if [[ ${PIPESTATUS[0]} != 0 ]]; then
+        brew cask list $1 > /dev/null 2>&1 | true
+        if [[ ${PIPESTATUS[0]} != 0 ]]; then
+            action "brew cask install $1 $2"
+            brew cask install $1
+            if [[ $? != 0 ]]; then
+                error "failed to install $1! aborting..."
+                exit -1
+            fi
+        fi
+    fi
+    ok
+}
+
+function require_tap() {
+    running "checking brew tap $1"
+    brew tap | grep $1
+    if [[ $? != 0 ]]; then
+        action "brew tap $1"
+        brew tap $1
+        if [[ $? != 0 ]]; then
+            error "failed to add brew tap $1! aborting..."
+            exit -1
+        fi
+    fi
+    ok
+}
+function require_brew() {
+    running "which $1"
+    which $1 > /dev/null 2>&1 | true
+    if [[ ${PIPESTATUS[0]} != 0 ]]; then
+        action "brew install $1 $2"
+        brew install $1 $2
+        if [[ $? != 0 ]]; then
+            error "failed to install $1! aborting..."
+            exit -1
+        fi
+    fi
+    ok
+}
+
+
+function install_homebrew() {
+    running "checking homebrew"
+    brew_bin=$(which brew) 2>&1 > /dev/null
+    if [[ $? != 0 ]]; then
+        action "installing homebrew"
+        ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
+        if [[ $? != 0 ]]; then
+            error "unable to install homebrew, script $0 abort!"
+            exit -1
+        fi
+    fi
+    ok
+}
+
+function install_brewcask() {
+    running "checking brew-cask"
+    output=$(brew tap | grep cask)
+    if [[ $? != 0 ]]; then
+        action "installing brew-cask"
+        require_brew caskroom/cask/brew-cask
+    fi
+    ok
+}
+
+
+function checkInstall() {
+  running "checking install of $1"
+  case "$1" in
+    *)
+        which $1
+        ;;
+  esac
+  if [[ $? != 0 ]]; then
+    warn "$1 is not installed";
+    return 1;
+  fi
+  ok
+  return 0;
+}
+
+###
+# Docker helpers
+###
+function dockerStart(){
+
+    # still working on VPN fix
+    #ensurePort $APP_PORT_EXTERNAL
+    #ensureMount
+    running "starting rsync into $VM_NAME"
+    startRsync
+    ok
+
+    APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
+    # instead of loading the VBox IP, we are routing localhost:$APP_PORT_EXTERNAL to VM
+    # APPURL=http://localhost:$APP_PORT_EXTERNAL
+
+    running "starting via 'docker-compose up'"
+    docker-compose up &
+
+    docker images | grep $APP_NAME_LOCAL > /dev/null 2>&1
+
+    if [[ $? != 0 ]]; then
+      # give it time to create and launch the image
+      bot "giving docker-compose time to create the image..."
+      sleep $VM_CREATE_TIME
+    fi
+
+    # load in browser
+    bot "OK, the app is booting up, we need to wait just a bit before trying to load it..."
+    for i in $(seq $APP_BOOT_TIME 1);do
+      bot "$i...";
+    sleep 1;
+    done
+
+    if [[ $1 != "background" ]]; then
+
+      bot "Launching: $APPURL"
+      bot "If the app doesn't work, you can debug it by running the following:\n\$(docker-machine env $VM_NAME > /dev/null);\ndocker exec -i -t \$(docker ps | grep $APP_NAME_LOCAL | awk '{print $1;}') bash"
+      # open $APPURL:$APP_PORT_EXTERNAL
+      open $APPURL
+
+    fi
+}
+
+# setup port forwarding localhost:$APP_PORT_EXTERNAL -> VirtualBox
+function ensurePort(){
+  running "ensuring port forwarding: "$APP_NAME_LOCAL"_"$1
+  VBoxManage showvminfo $VM_NAME | grep $APP_NAME_LOCAL"_"$1 > /dev/null 2>&1
+  if [ $? != 0 ]; then
+    bot "adding port forwarding for $APP_NAME_LOCAL to $1"
+    VBoxManage controlvm $VM_NAME natpf1 $APP_NAME_LOCAL"_"$1,tcp,,$1,,$1
+  fi
+  ok
+}
+
+function declutter(){
+  running "removing all stopped containers"
+  docker rm $(docker ps -a -q) > /dev/null 2>&1
+  ok
+  running "removing all untagged images (cruft)"
+  docker rmi $(docker images -q --filter "dangling=true") > /dev/null 2>&1
+  ok
+}
+
+function dockerStop(){
+  # killbyname docker-osx-dev
+  running "stopping rsync"
+  stopRsync
+  ok
+  running "stopping docker containers"
+  docker-compose stop > /dev/null 2>&1
+  ok
+  declutter
+}
+
+function shellinit(){
+    running "shellinit"
+    # make sure docker port routing is in place (need this if we are on cisco vpn on yosemite)
+    # https://github.com/boot2docker/boot2docker/issues/392#issuecomment-66694197
+    # still working on VPN fix... this isn't working with docker-machine
+    # maybe a fix in here somewhere: https://github.com/docker/machine/issues/1031
+    #ensurePort 2376
+    #export DOCKER_HOST=tcp://127.0.0.1:2376;
+    eval "$(docker-machine env $VM_NAME)"
+    ok
+}
+
+# ensure that docker is running and mapped properly to the VM
+function ensureDocker() {
+
+    running "ensuring $VM_NAME vm is running"
+
+    docker-machine ls | grep $VM_NAME > /dev/null 2>&1
+    if [[ $? != 0 ]]; then
+      # vm doesn't exist
+      action "$VM_NAME vm does not exist. Creating it"
+
+      docker-machine --debug create -d virtualbox $VM_NAME
+    fi
+    docker-machine ls | grep $VM_NAME | grep Running > /dev/null 2>&1
+    if [[ $? != 0 ]]; then
+      bot "starting the vm"
+      docker-machine start $VM_NAME
+    fi
+    ok
+
+    shellinit
+
+    docker ps > /dev/null 2>&1;
+    if [[ $? != 0 ]]; then
+      defaultError
+    else
+      return 1;
+    fi
+}
+
+function clean(){
+    shellinit
+    docker rm -f $(docker ps -a | grep $APP_NAME_LOCAL | awk '{print $1;}')
+    docker rmi -f $APP_NAME_LOCAL
+}
+
+function startRsync(){
+  # only do one
+  stopRsync
+  cd app
+  docker-rsync $VM_NAME &>/dev/null &
+  cd -
+}
+
+function stopRsync(){
+  killbyname docker-rsync &>/dev/null
+}
+
+function ensureMount(){
+    if [ ! -d "/Users/$(whoami)/rsync" ]; then
+      mkdir -p /Users/$(whoami)/rsync
+    fi
+    VBoxManage showvminfo "$VM_NAME" | grep rsync
+    if [[ $? != 0 ]]; then
+      docker-machine ls | grep $VM_NAME | grep Running
+      if [[ $? == 0 ]]; then
+        # have to stop the VM :(
+        # otherwise, it will fail to add the shared directory
+        docker-machine stop $VM_NAME
+      fi
+      # add this directory to the VirtualBox mount (otherwise, we can only mount things from ~/)
+      # which will appear mountable within docker as /Users...
+      VBoxManage sharedfolder add "$VM_NAME" --name "rsync" --hostpath "/Users/$(whoami)/rsync" --automount
+      VBoxManage setextradata $VM_NAME VBoxInternal2/SharedFoldersEnableSymlinksCreate/rsync 1
+    fi
+    docker-machine ls | grep $VM_NAME | grep Running
+    if [[ $? != 0 ]]; then
+        ensureDocker
+    fi
+    docker-machine ssh $VM_NAME 'sudo mkdir -p /rsync'
+    # make sure we mount the rsync directory:
+    bot "mounting app folder in vm..."
+    docker-machine ssh $VM_NAME 'sudo mount -t vboxsf -o uid=1000,gid=50 rsync /rsync'
+    if [[ $? != 0 ]]; then
+        bot "drats. That didn't work. We don't have a solution for this yet. If you find one, please pull-request."
+        exit -1
+    fi
+}
 
 bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
@@ -106,7 +393,7 @@ case "$1" in
             read -r -p "Did you install Docker Toolkit? [Y|n]" responseToolbox
             if [[ $responseToolbox =~ ^(no|n|N) ]];then
               bot "well, go install Docker Toolkit, then run 'dev init' again"
-              exit 1;
+              exit 1
             fi
             ok
           fi
@@ -168,7 +455,16 @@ case "$1" in
         ok "done"
         ;;
     vpn)
-        docker-machine restart $VM_NAME;
+        VBOXNET=$(VBoxManage showvminfo $VM_NAME --machinereadable | grep hostonlyadapter | cut -d '"' -f 2)
+
+        if [ -z "$VBOXNET" ]; then
+          error "No vboxnet interface found for VM $VM_NAME"
+          exit -1;
+        fi
+
+        bot "Requires sudo:"
+        sudo route -n add -net 192.168.99.0/24 -interface $VBOXNET
+        ok
         ;;
     free)
         ensureDocker

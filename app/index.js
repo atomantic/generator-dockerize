@@ -82,7 +82,6 @@ module.exports = yeoman.generators.Base.extend({
     provision: function() {
       'use strict';
       mkdirp('app');
-      mkdirp('lib');
 
       this.fs.copy(
         this.templatePath('.dockerignore'),
@@ -107,29 +106,17 @@ module.exports = yeoman.generators.Base.extend({
         this.destinationPath('docker-compose.tmpl'),
         this.userData
       );
-      this.fs.copy(
-        this.templatePath('docker.sh'),
-        this.destinationPath('lib/docker.sh')
-      );
       this.fs.copyTpl(
         this.templatePath('Dockerfile'),
         this.destinationPath('Dockerfile'),
         this.userData
       );
       this.fs.copy(
-        this.templatePath('libecho.sh'),
-        this.destinationPath('lib/libecho.sh')
-      );
-      this.fs.copy(
-        this.templatePath('libinstall.sh'),
-        this.destinationPath('lib/libinstall.sh')
-      );
-      this.fs.copy(
-        this.templatePath('.rsyncignore'),
+        this.templatePath('app/.rsyncignore'),
         this.destinationPath('app/.rsyncignore')
       );
       this.fs.copy(
-        this.templatePath('exec'),
+        this.templatePath('app/exec'),
         this.destinationPath('app/exec')
       );
 
