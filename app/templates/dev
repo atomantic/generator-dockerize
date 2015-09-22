@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# v1.1.0                                  #
+# v1.2.0                                  #
 ###########################################
 
 # project specific config
@@ -455,15 +455,24 @@ case "$1" in
         ok "done"
         ;;
     vpn)
+        bot "Fixing route table after Cisco VPN disconnect"
+        read -r -p "Did you disconnect VPN? [Y|n]" response
+        if [[ $response =~ ^(no|n|N) ]];then
+          bot "well do that and re-run this..."
+          exit 2;
+        fi
+        ok
         VBOXNET=$(VBoxManage showvminfo $VM_NAME --machinereadable | grep hostonlyadapter | cut -d '"' -f 2)
 
         if [ -z "$VBOXNET" ]; then
           error "No vboxnet interface found for VM $VM_NAME"
           exit -1;
         fi
-
+        ip_address=$(docker-machine ip $VM_NAME)
+        ip_sub=$(echo $ip_address | sed 's/.[^\.]*$//g')
         bot "Requires sudo:"
-        sudo route -n add -net 192.168.99.0/24 -interface $VBOXNET
+        sudo route -n delete -net $ip_sub
+        sudo route -n add -net $ip_sub.0/24 -interface $VBOXNET
         ok
         ;;
     free)
@@ -547,5 +556,6 @@ case "$1" in
         echo "start - start the service"
         echo "stop - stop the service"
         echo "test - test the service by running a docker image and pointing tests at the image"
+        echo "vpn - fix routing table after disconnecting from Cisco Anyconnect VPN client"
         ;;
 esac

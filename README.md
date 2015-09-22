@@ -43,9 +43,6 @@ yo dockerize
 * docker-compose.tmpl
   * this will be used to generate a per-developer docker-compose.yml, which should be added to .gitignore
   * the sync directory will be different depending on where developers clone the repo
-* lib/docker.sh
-* lib/libecho.sh
-* lib/libinstall.sh
 * Dockerfile
   * you will need to update this file with your app installation instructions
 
@@ -58,3 +55,8 @@ yo dockerize
 5. run `dev init`
 
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
+
+# HISTORY
+
+## 1.2.0
+  - add `dev vpn` to fix OSX routing table after disconnecting from Cisco AnyConnect VPN client
