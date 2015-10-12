@@ -48,12 +48,12 @@ module.exports = yeoman.generators.Base.extend({
         type: 'input',
         name: 'appBootTime',
         message: 'How many seconds does your app take to start?',
-        default: 25
+        default: 5
       }, {
         type: 'input',
         name: 'vmCreateTime',
         message: 'About how many seconds does your docker image take to build (you can edit this later in dev.config.sh)?',
-        default: 240
+        default: 10
       }, {
         type: 'input',
         name: 'fromOS',
