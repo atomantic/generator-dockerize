@@ -5,7 +5,3 @@ web:
   volumes:
    - /rsync_PWD_:/app
   env_file: .env
-  links:
-   - memcached
-memcached:
-  image: memcached

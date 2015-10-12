@@ -3,15 +3,4 @@
 # note: this script must have a foreground running process as the final exec, otherwise your docker image will just finish
 # and stop as soon as you run it
 
-if [[ "$APP_ENV" -eq "DEV" ]]; then
-  echo "dev mode, rebuild npm modules because we don't want to use osx compilations"
-  npm install -s >/dev/null
-  npm rebuild -s > /dev/null
-  # in this example, we are using PM2 to run our app
-  # we also have a dev running config that does live-reload
-  pm2 start process.dev.json && pm2 logs
-else
-  # in this example, we have a prod config that is exactly like the dev config
-  # but without file watching / live-reload
-  pm2 start process.json && pm2 logs
-fi
+python -m SimpleHTTPServer 3000

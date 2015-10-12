@@ -11,17 +11,13 @@ This Yeoman Generator will add a dockerize project scaffolding to your project.
   * sample `./app/exec`
 ```
 #!/usr/bin/env bash
-if [[ "$APP_ENV" -eq "DEV" ]]; then
-  echo "dev mode, rebuild npm modules because we don't want to use osx compilations"
-  npm install -s >/dev/null
-  npm rebuild -s > /dev/null
-  pm2 start process.dev.json && pm2 logs
-else
-  pm2 start process.json && pm2 logs
-fi
+
+# note: this script must have a foreground running process as the final exec, otherwise your docker image will just finish
+# and stop as soon as you run it
+
+python -m SimpleHTTPServer 3000
+
 ```
-* your docker app is a single web app with a memcached docker container connected to it
-  * this can easily be modified after initial scaffolding by editing `docker-compose.tmpl`
 
 ## Usage
 
@@ -57,6 +53,10 @@ yo dockerize
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
 
 # HISTORY
+
+## 1.2.2
+  - add sample index.html app using python SimpleHTTPServer
+  - remove memcached image link
 
 ## 1.2.1
   - remove old test `dev` methods

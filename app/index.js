@@ -59,6 +59,11 @@ module.exports = yeoman.generators.Base.extend({
         name: 'fromOS',
         message: 'What base OS does your app build with?',
         default: 'centos:7'
+      }, {
+        type: 'confirm',
+        name: 'sampleApp',
+        message: 'install sample index.html app?',
+        default: false
       }
     ];
 
@@ -71,7 +76,8 @@ module.exports = yeoman.generators.Base.extend({
         dockerHub: props.dockerHub,
         fromOS: props.fromOS,
         appBootTime: props.appBootTime,
-        vmCreateTime: props.vmCreateTime
+        vmCreateTime: props.vmCreateTime,
+        sampleApp: props.sampleApp
       };
 
       done();
@@ -119,6 +125,12 @@ module.exports = yeoman.generators.Base.extend({
         this.templatePath('app/exec'),
         this.destinationPath('app/exec')
       );
+      if (this.userData.sampleApp) {
+        this.fs.copy(
+          this.templatePath('app/index.html'),
+          this.destinationPath('app/index.html')
+        );
+      }
 
     }
   },
