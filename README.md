@@ -54,6 +54,10 @@ The `dev` script will ensure that you have all the docker software and configura
 
 # HISTORY
 
+## 1.2.4
+  - shorter default loads
+  - now including smaple app by default
+
 ## 1.2.2
   - add sample index.html app using python SimpleHTTPServer
   - remove memcached image link

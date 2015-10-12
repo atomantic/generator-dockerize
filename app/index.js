@@ -63,7 +63,7 @@ module.exports = yeoman.generators.Base.extend({
         type: 'confirm',
         name: 'sampleApp',
         message: 'install sample index.html app?',
-        default: false
+        default: true
       }
     ];
 
