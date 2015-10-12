@@ -515,36 +515,6 @@ case "$1" in
         ok
         bot "run 'dev init' again"
         ;;
-    testBuild)
-        ensureDocker
-        dockerStop
-        build_command="docker build -t $REMOTE_NAME ."
-        if [[ "$2" == "reset" ]];then
-          running "removing docker build..."
-          docker kill $(docker ps | grep $REMOTE_NAME | awk '{print $1;}')
-          docker rmi -f $REMOTE_NAME
-          ok
-          echo $build_command
-          $build_command
-          ok
-        fi
-        # make sure we have a build version of the docker image
-        # and not a local "_web" version
-        running "checking for image: docker images | grep $REMOTE_NAME";
-        docker images | grep $REMOTE_NAME > /dev/null 2>&1;
-        if [ $? != 0 ]; then
-            # build it
-            echo $build_command
-            $build_command
-            if [ $? -ne 0 ]; then
-              error "failed to build the docker image :("
-              exit -1;
-            fi
-        fi
-        bot "found a build image! testing..."
-        ./build_scripts/test.sh 1.0.1-SNAPSHOT docker-reg.cloud.corp.dig.com:5000/dtss/dockerized 4103 $VM_NAME
-        ok "done"
-        ;;
     *)
         bot "Hi, I can do a few helpful development tricks.\n"
         echo -e "Run each as an argument to this script (e.g. './dev init'):\n"

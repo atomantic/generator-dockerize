@@ -58,5 +58,8 @@ The `dev` script will ensure that you have all the docker software and configura
 
 # HISTORY
 
+## 1.2.1
+  - remove old test `dev` methods
+
 ## 1.2.0
   - add `dev vpn` to fix OSX routing table after disconnecting from Cisco AnyConnect VPN client
