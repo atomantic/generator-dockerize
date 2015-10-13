@@ -7,17 +7,6 @@ This Yeoman Generator will add a dockerize project scaffolding to your project.
 * Your application lives in `./app`
 * You are on `OSX`
 * You are cool with `homebrew`
-* Your Docker exec command is this shell script: `./app/exec`
-  * sample `./app/exec`
-```
-#!/usr/bin/env bash
-
-# note: this script must have a foreground running process as the final exec, otherwise your docker image will just finish
-# and stop as soon as you run it
-
-python -m SimpleHTTPServer 3000
-
-```
 
 ## Usage
 
@@ -46,8 +35,8 @@ yo dockerize
 
 1. run `yo dockerize` on your project
 2. edit `./app/exec` to have proper app execute instructions
-3. edit `docker-compose.tmpl` if needed (probably)
-4. edit the Dockerfile as needed
+3. edit `docker-compose.tmpl` if needed
+4. edit the Dockerfile as needed to construct your app
 5. run `dev init`
 
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
@@ -56,7 +45,7 @@ The `dev` script will ensure that you have all the docker software and configura
 
 ## 1.2.4
   - shorter default loads
-  - now including smaple app by default
+  - now including sample app by default
 
 ## 1.2.2
   - add sample index.html app using python SimpleHTTPServer
