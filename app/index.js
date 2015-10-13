@@ -117,6 +117,11 @@ module.exports = yeoman.generators.Base.extend({
         this.destinationPath('Dockerfile'),
         this.userData
       );
+      this.fs.copyTpl(
+        this.templatePath('test.sh'),
+        this.destinationPath('test.sh'),
+        this.userData
+      );
       this.fs.copy(
         this.templatePath('app/.rsyncignore'),
         this.destinationPath('app/.rsyncignore')

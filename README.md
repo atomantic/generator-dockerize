@@ -1,6 +1,7 @@
 # Yeoman Docker Generator
 
-This Yeoman Generator will add a dockerize project scaffolding to your project.
+This Yeoman Generator will add a Docker scaffolding to your project, including Dockerfile, docker-compose and a dev script to simplify management of Docker.
+The `dev` script automates solutions to problems with running docker on OSX.
 
 ## Assumptions
 
@@ -12,8 +13,19 @@ This Yeoman Generator will add a dockerize project scaffolding to your project.
 
 ```
 npm install -g yo generator-dockerize
+# cd to your project directory
 yo dockerize
 ```
+
+# Getting Started
+
+1. run `yo dockerize` on your project
+2. edit `./app/exec` to have proper app execute instructions
+3. edit `docker-compose.tmpl` if needed
+4. edit the Dockerfile as needed to construct your app
+5. run `dev init`
+
+The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
 
 ## Scaffolding Contents
 
@@ -31,17 +43,15 @@ yo dockerize
 * Dockerfile
   * you will need to update this file with your app installation instructions
 
-# Getting Started
+## Dev Toolkit
 
-1. run `yo dockerize` on your project
-2. edit `./app/exec` to have proper app execute instructions
-3. edit `docker-compose.tmpl` if needed
-4. edit the Dockerfile as needed to construct your app
-5. run `dev init`
-
-The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
+run `dev help` to get a list of options on the `dev` script
 
 # HISTORY
+
+## 1.3.0
+  - create test runner script for `dev test`
+  - cleanup `dev` docs and commands
 
 ## 1.2.4
   - shorter default loads
