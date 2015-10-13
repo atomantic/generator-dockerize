@@ -52,7 +52,7 @@ module.exports = yeoman.generators.Base.extend({
       }, {
         type: 'input',
         name: 'vmCreateTime',
-        message: 'About how many seconds does your docker image take to build (you can edit this later in dev.config.sh)?',
+        message: 'About how many seconds does your docker image take to build (you can edit this later in dev.config)?',
         default: 10
       }, {
         type: 'input',
@@ -103,8 +103,8 @@ module.exports = yeoman.generators.Base.extend({
         this.destinationPath('dev')
       );
       this.fs.copyTpl(
-        this.templatePath('dev.config.sh'),
-        this.destinationPath('dev.config.sh'),
+        this.templatePath('dev.config'),
+        this.destinationPath('dev.config'),
         this.userData
       );
       this.fs.copyTpl(
