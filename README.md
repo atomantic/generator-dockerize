@@ -27,6 +27,10 @@ yo dockerize
 
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
 
+# Testing Your Docker Image / App
+You can run `dev test` to test either the running instance or to run and test a new instance.
+Before running `dev test`, you should update test.sh (at the bottom) to add a test runner execution command.
+
 ## Scaffolding Contents
 
 * ./app/.rsyncignore
@@ -36,7 +40,7 @@ The `dev` script will ensure that you have all the docker software and configura
 * .dockerignore
 * .env
 * dev
-* dev.config.sh
+* dev.config
 * docker-compose.tmpl
   * this will be used to generate a per-developer docker-compose.yml, which should be added to .gitignore
   * the sync directory will be different depending on where developers clone the repo
