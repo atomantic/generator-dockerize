@@ -93,7 +93,7 @@ module.exports = yeoman.generators.Base.extend({
   writing: {
     provision: function() {
       'use strict';
-      mkdirp('app');
+      mkdirp(this.userData.apploc.substr(1));
 
       this.fs.copy(
         this.templatePath('.dockerignore'),
@@ -130,16 +130,16 @@ module.exports = yeoman.generators.Base.extend({
       );
       this.fs.copy(
         this.templatePath('app/.rsyncignore'),
-        this.destinationPath('app/.rsyncignore')
+        this.destinationPath(this.userData.apploc.substr(1) + '/.rsyncignore')
       );
       this.fs.copy(
         this.templatePath('app/exec'),
-        this.destinationPath('app/exec')
+        this.destinationPath(this.userData.apploc.substr(1) + '/exec')
       );
       if (this.userData.sampleApp) {
         this.fs.copy(
             this.templatePath('app/index.html'),
-          this.destinationPath('app/index.html')
+          this.destinationPath(this.userData.apploc.substr(1) + '/index.html')
         );
       }
 
@@ -151,7 +151,7 @@ module.exports = yeoman.generators.Base.extend({
       '\n\n' +
       chalk.green('\\[._.]/\n') +
       'All done!\n' +
-      'Edit the Dockerfile, app/exec and docker-compose.tml as needed!\n' +
+      'Edit the Dockerfile, ' + this.userData.apploc + '/exec and docker-compose.tml as needed!\n' +
       'Then run\n' +
       chalk.cyan('./dev init') + '\n' +
       'to bootstrap your docker environment!'
