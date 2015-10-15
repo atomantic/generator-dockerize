@@ -26,6 +26,11 @@ module.exports = yeoman.generators.Base.extend({
     var prompts = [
       {
         type: 'input',
+        name: 'apploc',
+        message: 'What directory relative to this project is your app stored in?',
+        default: '/app'
+      }, {
+        type: 'input',
         name: 'appname',
         message: 'What is the name of your app?',
         default: dirParts[dirParts.length - 1]
@@ -69,6 +74,7 @@ module.exports = yeoman.generators.Base.extend({
 
     this.prompt(prompts, function(props) {
       this.userData = {
+        apploc: props.apploc,
         appname: props.appname,
         org: props.org,
         externalPort: parseInt(_.random(3, 9) + '' + _.random(0, 9) + '' + _.random(0, 9) + '' + _.random(0, 9), 10),
@@ -132,7 +138,7 @@ module.exports = yeoman.generators.Base.extend({
       );
       if (this.userData.sampleApp) {
         this.fs.copy(
-          this.templatePath('app/index.html'),
+            this.templatePath('app/index.html'),
           this.destinationPath('app/index.html')
         );
       }
