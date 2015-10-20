@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.4.1                        #
+# DockerDev: 1.4.2                        #
 ###########################################
 
 # project specific config
@@ -441,11 +441,10 @@ case "$1" in
         ;;
     update)
         bot "updating the dev toolkit"
-        cp dev dev.latest
         curl -o dev.latest https://raw.githubusercontent.com/atomantic/generator-dockerize/master/app/templates/dev
         ok "fetched latest"
-        oldversion=$(grep "# DockerDev:" dev | sed 's/[^0-9.]//g');
-        newversion=$(grep "# DockerDev:" dev.latest | sed 's/[^0-9.]//g');
+        oldversion=$(grep "^# DockerDev:" dev | sed 's/[^0-9.]//g');
+        newversion=$(grep "^# DockerDev:" dev.latest | sed 's/[^0-9.]//g');
 
         if [ "$oldversion" != "$newversion" ]; then
           bot "Update found! old: $oldversion -> new: $newversion"
