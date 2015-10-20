@@ -59,6 +59,9 @@ To get updates to the dockerized dev toolkit after you run the generator, simply
 
 # HISTORY
 
+## 1.6.0
+  - now including rsync mounting in `dev init`. Will provide diagram later :)
+
 ## 1.5.0
   - new `dev.init.sh` script to customize a pre-setup script for the project. This is to address an issue we found with docker-rsync deleting our node_modules inside the VM. We needed to do `npm install` on the host before building the docker image and rsyncing. The Dockerfile then does `npm rebuild` to recompile packages for the Docker OS
 

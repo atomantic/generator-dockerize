@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.5.0                        #
+# DockerDev: 1.6.0                        #
 ###########################################
 
 # project specific config
@@ -155,7 +155,6 @@ function dockerStart(){
 
     # still working on VPN fix
     #ensurePort $APP_PORT_EXTERNAL
-    #ensureMount
     running "starting rsync into $VM_NAME"
     startRsync
     ok
@@ -258,7 +257,7 @@ function startRsync(){
   # only do one
   stopRsync
   cd app
-  docker-rsync $VM_NAME &>/dev/null &
+  docker-rsync $VM_NAME &
   cd -
 }
 
@@ -267,6 +266,9 @@ function stopRsync(){
 }
 
 function ensureMount(){
+    # create an rsync directory in my home directory
+    # so we don't use up all the space on the virtual machine
+    # (/Users is mounted)
     if [ ! -d "/Users/$(whoami)/rsync" ]; then
       mkdir -p /Users/$(whoami)/rsync
     fi
@@ -287,6 +289,7 @@ function ensureMount(){
     if [[ $? != 0 ]]; then
         ensureDocker
     fi
+    # docker-rsync will only write to /rsync on the vm
     docker-machine ssh $VM_NAME 'sudo mkdir -p /rsync'
     # make sure we mount the rsync directory:
     bot "mounting app folder in vm..."
@@ -383,6 +386,8 @@ case "$1" in
 
         # run dev.init instructions (install base npm modules, etc)
         source ./dev.init.sh
+
+        ensureMount
 
         ensureDocker
 
