@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.4.0                        #
+# DockerDev: 1.4.1                        #
 ###########################################
 
 # project specific config
@@ -452,7 +452,7 @@ case "$1" in
           cp dev.latest dev
         fi
         rm dev.latest
-        ok "you have the latest version"
+        ok "you have the latest version: $newversion"
         ;;
     vpn)
         bot "Fixing route table after Cisco VPN disconnect"
