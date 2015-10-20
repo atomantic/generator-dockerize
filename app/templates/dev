@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# v1.3.0                                  #
+# DockerDev: 1.4.0                        #
 ###########################################
 
 # project specific config
@@ -297,8 +297,6 @@ function ensureMount(){
     fi
 }
 
-bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
-
 # OS_VERSION=$(sw_vers -productVersion);
 # OS_MAJOR=`echo $OS_VERSION | cut -d. -f1`
 # OS_MINOR=`echo $OS_VERSION | cut -d. -f2`
@@ -345,6 +343,7 @@ case "$1" in
     init)
         bot "Hi, I'm going to setup/update your environment and startup the app."
 
+        bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
         install_homebrew
         require_tap synack/docker
@@ -440,6 +439,21 @@ case "$1" in
         ./test.sh latest $APP_NAME $APP_PORT_EXTERNAL $VM_NAME
         ok "done"
         ;;
+    update)
+        bot "updating the dev toolkit"
+        cp dev dev.latest
+        curl -o dev.latest https://raw.githubusercontent.com/atomantic/generator-dockerize/master/app/templates/dev
+        ok "fetched latest"
+        oldversion=$(grep "# DockerDev:" dev | sed 's/[^0-9.]//g');
+        newversion=$(grep "# DockerDev:" dev.latest | sed 's/[^0-9.]//g');
+
+        if [ "$oldversion" != "$newversion" ]; then
+          bot "Update found! old: $oldversion -> new: $newversion"
+          cp dev.latest dev
+        fi
+        rm dev.latest
+        ok "you have the latest version"
+        ;;
     vpn)
         bot "Fixing route table after Cisco VPN disconnect"
         read -r -p "Did you disconnect VPN? [Y|n]" response
@@ -473,6 +487,7 @@ case "$1" in
         echo "start - start the service"
         echo "stop - stop the service"
         echo "test - test the service by running a docker image and pointing tests at the image"
+        echo "update - update the dev tool with the latest automation scripts"
         echo "vpn - fix routing table after disconnecting from Cisco Anyconnect VPN client"
         ;;
 esac

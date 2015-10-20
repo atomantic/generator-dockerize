@@ -51,7 +51,14 @@ Before running `dev test`, you should update test.sh (at the bottom) to add a te
 
 run `dev help` to get a list of options on the `dev` script
 
+## Updates
+
+To get updates to the dockerized dev toolkit after you run the generator, simply run `dev update`. This will fetch the latest dev toolkit from github and replace it in your project. Then you can use any new automated fixes for docker that are in the latest release.
+
 # HISTORY
+
+## 1.4.0
+  - `dev update` will fetch the latest `dev` toolkit and replace it in your project
 
 ## 1.3.0
   - create test runner script for `dev test`
