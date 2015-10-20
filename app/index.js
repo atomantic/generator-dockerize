@@ -108,6 +108,11 @@ module.exports = yeoman.generators.Base.extend({
         this.userData
       );
       this.fs.copyTpl(
+        this.templatePath('dev.init'),
+        this.destinationPath('dev.init'),
+        this.userData
+      );
+      this.fs.copyTpl(
         this.templatePath('docker-compose.tmpl'),
         this.destinationPath('docker-compose.tmpl'),
         this.userData

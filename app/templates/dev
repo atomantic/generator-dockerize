@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.4.2                        #
+# DockerDev: 1.5.0                        #
 ###########################################
 
 # project specific config
@@ -381,6 +381,9 @@ case "$1" in
         # setup docker-compose.yml
         cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"/app~" > docker-compose.yml
 
+        # run dev.init instructions (install base npm modules, etc)
+        source ./dev.init.sh
+
         ensureDocker
 
         dockerStart
@@ -436,7 +439,13 @@ case "$1" in
         ;;
     test)
         ensureDocker
-        ./test.sh latest $APP_NAME $APP_PORT_EXTERNAL $VM_NAME
+        docker ps | grep $APP_NAME_LOCAL
+        if [ $? != 0 ]; then
+          bot "starting app in background"
+          dockerStart background
+        fi
+
+        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $VM_NAME
         ok "done"
         ;;
     update)
