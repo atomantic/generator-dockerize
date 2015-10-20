@@ -57,6 +57,12 @@ run `dev help` to get a list of options on the `dev` script
 
 To get updates to the dockerized dev toolkit after you run the generator, simply run `dev update`. This will fetch the latest dev toolkit from github and replace it in your project. Then you can use any new automated fixes for docker that are in the latest release.
 
+## File Watch Support with Docker-Rsync
+
+This toolkit starts up docker-rsync along with the docker VM as a way of keeping your host OS code up-to-date inside the VM->Container. This is the gist of how that works:
+
+![Running](https://github.com/atomantic/generator-dockerize/raw/master/docs/docker-rsync.png)
+
 # HISTORY
 
 ## 1.6.0
