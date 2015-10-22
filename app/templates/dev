@@ -433,6 +433,7 @@ case "$1" in
         else
           docker exec -i -t $instance bash
         fi
+        ;;
     start)
         ensureDocker
         dockerStart $1
