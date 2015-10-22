@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.4.2                        #
+# DockerDev: 1.6.1                        #
 ###########################################
 
 # project specific config
@@ -155,7 +155,6 @@ function dockerStart(){
 
     # still working on VPN fix
     #ensurePort $APP_PORT_EXTERNAL
-    #ensureMount
     running "starting rsync into $VM_NAME"
     startRsync
     ok
@@ -257,9 +256,10 @@ function ensureDocker() {
 function startRsync(){
   # only do one
   stopRsync
-  cd app
-  docker-rsync $VM_NAME &>/dev/null &
-  cd -
+  local tmp=$(pwd)
+  cd .$APP_LOC
+  docker-rsync -verbose $VM_NAME &
+  cd $tmp
 }
 
 function stopRsync(){
@@ -267,6 +267,9 @@ function stopRsync(){
 }
 
 function ensureMount(){
+    # create an rsync directory in my home directory
+    # so we don't use up all the space on the virtual machine
+    # (/Users is mounted)
     if [ ! -d "/Users/$(whoami)/rsync" ]; then
       mkdir -p /Users/$(whoami)/rsync
     fi
@@ -287,6 +290,7 @@ function ensureMount(){
     if [[ $? != 0 ]]; then
         ensureDocker
     fi
+    # docker-rsync will only write to /rsync on the vm
     docker-machine ssh $VM_NAME 'sudo mkdir -p /rsync'
     # make sure we mount the rsync directory:
     bot "mounting app folder in vm..."
@@ -379,7 +383,12 @@ case "$1" in
         fi
 
         # setup docker-compose.yml
-        cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"/app~" > docker-compose.yml
+        cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"$APP_LOC~" > docker-compose.yml
+
+        # run dev.init instructions (install base npm modules, etc)
+        source ./dev.init.sh
+
+        ensureMount
 
         ensureDocker
 
@@ -416,15 +425,15 @@ case "$1" in
         if [ -z $1 ]; then
           # run any version deployed to docker hub
           bot "checking $REMOTE_NAME for version tag $2"
-          docker run -t $REMOTE_NAME:$2
-          docker exec -i -t $(docker ps | grep $REMOTE_NAME:$2 | awk '{print $1;}') bash
+          docker run -i -t $REMOTE_NAME:$2 bash
           exit $?;
         fi
-        docker ps | grep $APP_NAME_LOCAL
-        if [ $? != 0 ]; then
-          dockerStart
+        instance=$(docker ps | grep $APP_NAME_LOCAL | awk '{print $1;}')
+        if [ -z "$instance" ]; then
+          docker run -i -t $APP_NAME_LOCAL bash
+        else
+          docker exec -i -t $instance bash
         fi
-        docker exec -i -t $(docker ps | grep $APP_NAME_LOCAL | awk '{print $1;}') bash
         ;;
     start)
         ensureDocker
@@ -436,7 +445,13 @@ case "$1" in
         ;;
     test)
         ensureDocker
-        ./test.sh latest $APP_NAME $APP_PORT_EXTERNAL $VM_NAME
+        docker ps | grep $APP_NAME_LOCAL
+        if [ $? != 0 ]; then
+          bot "starting app in background"
+          dockerStart background
+        fi
+
+        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $VM_NAME
         ok "done"
         ;;
     update)

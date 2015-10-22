@@ -23,6 +23,7 @@ yo dockerize
 2. edit `./app/exec` to have proper app execute instructions
 3. edit `docker-compose.tmpl` if needed
 4. edit the Dockerfile as needed to construct your app
+5. edit `dev.init.sh` if needed to run any host setup before docker image is created
 5. run `dev init`
 
 The `dev` script will ensure that you have all the docker software and configuration needed to run and will run your app inside a docker container.
@@ -41,6 +42,7 @@ Before running `dev test`, you should update test.sh (at the bottom) to add a te
 * .env
 * dev
 * dev.config
+* dev.init.sh
 * docker-compose.tmpl
   * this will be used to generate a per-developer docker-compose.yml, which should be added to .gitignore
   * the sync directory will be different depending on where developers clone the repo
@@ -55,7 +57,22 @@ run `dev help` to get a list of options on the `dev` script
 
 To get updates to the dockerized dev toolkit after you run the generator, simply run `dev update`. This will fetch the latest dev toolkit from github and replace it in your project. Then you can use any new automated fixes for docker that are in the latest release.
 
+## File Watch Support with Docker-Rsync
+
+This toolkit starts up docker-rsync along with the docker VM as a way of keeping your host OS code up-to-date inside the VM->Container. This is the gist of how that works:
+
+![Running](https://github.com/atomantic/generator-dockerize/raw/master/docs/docker-rsync.png)
+
 # HISTORY
+
+## 1.6.1
+  - fix `dev shell` to work even if your instance fails to run (still does `docker run -i -t $APP_NAME_LOCAL bash` instead of using `exec` while assuming running instance)
+
+## 1.6.0
+  - now including rsync mounting in `dev init`. Will provide diagram later :)
+
+## 1.5.0
+  - new `dev.init.sh` script to customize a pre-setup script for the project. This is to address an issue we found with docker-rsync deleting our node_modules inside the VM. We needed to do `npm install` on the host before building the docker image and rsyncing. The Dockerfile then does `npm rebuild` to recompile packages for the Docker OS
 
 ## 1.4.0
   - `dev update` will fetch the latest `dev` toolkit and replace it in your project
