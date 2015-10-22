@@ -1,12 +1,12 @@
 FROM <%= fromOS %>
 
 # Bundle app source
-ADD app /app
-WORKDIR /app
+ADD app <%= apploc %>
+WORKDIR <%= apploc %>
 
 ADD .env /.env
 RUN . /.env
 
 EXPOSE <%= internalPort %>
 
-CMD ["/app/exec"]
+CMD ["<%= apploc %>/exec"]

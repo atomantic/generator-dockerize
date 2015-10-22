@@ -26,6 +26,11 @@ module.exports = yeoman.generators.Base.extend({
     var prompts = [
       {
         type: 'input',
+        name: 'apploc',
+        message: 'What directory relative to this project is your app stored in?',
+        default: '/app'
+      }, {
+        type: 'input',
         name: 'appname',
         message: 'What is the name of your app?',
         default: dirParts[dirParts.length - 1]
@@ -69,6 +74,7 @@ module.exports = yeoman.generators.Base.extend({
 
     this.prompt(prompts, function(props) {
       this.userData = {
+        apploc: props.apploc,
         appname: props.appname,
         org: props.org,
         externalPort: parseInt(_.random(3, 9) + '' + _.random(0, 9) + '' + _.random(0, 9) + '' + _.random(0, 9), 10),
@@ -87,7 +93,7 @@ module.exports = yeoman.generators.Base.extend({
   writing: {
     provision: function() {
       'use strict';
-      mkdirp('app');
+      mkdirp(this.userData.apploc.substr(1));
 
       this.fs.copy(
         this.templatePath('.dockerignore'),
@@ -108,8 +114,8 @@ module.exports = yeoman.generators.Base.extend({
         this.userData
       );
       this.fs.copyTpl(
-        this.templatePath('dev.init'),
-        this.destinationPath('dev.init'),
+        this.templatePath('dev.init.sh'),
+        this.destinationPath('dev.init.sh'),
         this.userData
       );
       this.fs.copyTpl(
@@ -129,16 +135,16 @@ module.exports = yeoman.generators.Base.extend({
       );
       this.fs.copy(
         this.templatePath('app/.rsyncignore'),
-        this.destinationPath('app/.rsyncignore')
+        this.destinationPath(this.userData.apploc.substr(1) + '/.rsyncignore')
       );
       this.fs.copy(
         this.templatePath('app/exec'),
-        this.destinationPath('app/exec')
+        this.destinationPath(this.userData.apploc.substr(1) + '/exec')
       );
       if (this.userData.sampleApp) {
         this.fs.copy(
-          this.templatePath('app/index.html'),
-          this.destinationPath('app/index.html')
+            this.templatePath('app/index.html'),
+          this.destinationPath(this.userData.apploc.substr(1) + '/index.html')
         );
       }
 
@@ -150,7 +156,7 @@ module.exports = yeoman.generators.Base.extend({
       '\n\n' +
       chalk.green('\\[._.]/\n') +
       'All done!\n' +
-      'Edit the Dockerfile, app/exec and docker-compose.tml as needed!\n' +
+      'Edit the Dockerfile, ' + this.userData.apploc + '/exec and docker-compose.tml as needed!\n' +
       'Then run\n' +
       chalk.cyan('./dev init') + '\n' +
       'to bootstrap your docker environment!'

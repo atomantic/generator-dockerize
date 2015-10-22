@@ -256,9 +256,10 @@ function ensureDocker() {
 function startRsync(){
   # only do one
   stopRsync
-  cd app
-  docker-rsync $VM_NAME &
-  cd -
+  local tmp=$(pwd)
+  cd .$APP_LOC
+  docker-rsync -verbose $VM_NAME &
+  cd $tmp
 }
 
 function stopRsync(){
@@ -382,7 +383,7 @@ case "$1" in
         fi
 
         # setup docker-compose.yml
-        cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"/app~" > docker-compose.yml
+        cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"$APP_LOC~" > docker-compose.yml
 
         # run dev.init instructions (install base npm modules, etc)
         source ./dev.init.sh
