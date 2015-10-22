@@ -114,8 +114,8 @@ module.exports = yeoman.generators.Base.extend({
         this.userData
       );
       this.fs.copyTpl(
-        this.templatePath('dev.init'),
-        this.destinationPath('dev.init'),
+        this.templatePath('dev.init.sh'),
+        this.destinationPath('dev.init.sh'),
         this.userData
       );
       this.fs.copyTpl(

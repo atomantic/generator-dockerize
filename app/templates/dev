@@ -256,9 +256,10 @@ function ensureDocker() {
 function startRsync(){
   # only do one
   stopRsync
-  cd app
-  docker-rsync $VM_NAME &
-  cd -
+  local tmp=$(pwd)
+  cd .$APP_LOC
+  docker-rsync -verbose $VM_NAME &
+  cd $tmp
 }
 
 function stopRsync(){
