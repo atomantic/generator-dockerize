@@ -65,6 +65,9 @@ This toolkit starts up docker-rsync along with the docker VM as a way of keeping
 
 # HISTORY
 
+## 1.6.1
+  - fix `dev shell` to work even if your instance fails to run (still does `docker run -i -t $APP_NAME_LOCAL bash` instead of using `exec` while assuming running instance)
+
 ## 1.6.0
   - now including rsync mounting in `dev init`. Will provide diagram later :)
 
