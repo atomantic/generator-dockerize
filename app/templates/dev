@@ -256,10 +256,9 @@ function ensureDocker() {
 function startRsync(){
   # only do one
   stopRsync
-  local tmp=$(pwd)
-  cd .$APP_LOC
-  docker-rsync -verbose $VM_NAME &
-  cd $tmp
+  cd $APP_LOC
+  docker-rsync $VM_NAME -dst="/Users/$(whoami)/rsync/$pwd" &
+  cd -
 }
 
 function stopRsync(){
@@ -269,36 +268,12 @@ function stopRsync(){
 function ensureMount(){
     # create an rsync directory in my home directory
     # so we don't use up all the space on the virtual machine
-    # (/Users is mounted)
+    # root path
+    # (/Users is already mounted as a share by VirtualBox)
     if [ ! -d "/Users/$(whoami)/rsync" ]; then
       mkdir -p /Users/$(whoami)/rsync
     fi
-    VBoxManage showvminfo "$VM_NAME" | grep rsync
-    if [[ $? != 0 ]]; then
-      docker-machine ls | grep $VM_NAME | grep Running
-      if [[ $? == 0 ]]; then
-        # have to stop the VM :(
-        # otherwise, it will fail to add the shared directory
-        docker-machine stop $VM_NAME
-      fi
-      # add this directory to the VirtualBox mount (otherwise, we can only mount things from ~/)
-      # which will appear mountable within docker as /Users...
-      VBoxManage sharedfolder add "$VM_NAME" --name "rsync" --hostpath "/Users/$(whoami)/rsync" --automount
-      VBoxManage setextradata $VM_NAME VBoxInternal2/SharedFoldersEnableSymlinksCreate/rsync 1
-    fi
-    docker-machine ls | grep $VM_NAME | grep Running
-    if [[ $? != 0 ]]; then
-        ensureDocker
-    fi
-    # docker-rsync will only write to /rsync on the vm
-    docker-machine ssh $VM_NAME 'sudo mkdir -p /rsync'
-    # make sure we mount the rsync directory:
-    bot "mounting app folder in vm..."
-    docker-machine ssh $VM_NAME 'sudo mount -t vboxsf -o uid=1000,gid=50 rsync /rsync'
-    if [[ $? != 0 ]]; then
-        bot "drats. That didn't work. We don't have a solution for this yet. If you find one, please pull-request."
-        exit -1
-    fi
+    # we will then use docker-rsync to rsync into this directory
 }
 
 # OS_VERSION=$(sw_vers -productVersion);

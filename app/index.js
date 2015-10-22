@@ -28,7 +28,7 @@ module.exports = yeoman.generators.Base.extend({
         type: 'input',
         name: 'apploc',
         message: 'What directory relative to this project is your app stored in?',
-        default: '/app'
+        default: 'app'
       }, {
         type: 'input',
         name: 'appname',
