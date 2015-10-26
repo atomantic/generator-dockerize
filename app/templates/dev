@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.6.1                        #
+# DockerDev: 1.6.2                        #
 ###########################################
 
 # project specific config
@@ -256,13 +256,17 @@ function ensureDocker() {
 function startRsync(){
   # only do one
   stopRsync
-  cd $APP_LOC
-  docker-rsync $VM_NAME -dst="/Users/$(whoami)/rsync/$pwd" &
-  cd -
+  dir=$(pwd);
+  docker-rsync -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
 }
 
 function stopRsync(){
-  killbyname docker-rsync &>/dev/null
+  ps ax | grep rsync | grep $(pwd) | grep -v grep
+  if [ $? != 0 ]; then
+    return 0;
+  fi
+  kill -9 `ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}'`
+  return 1;
 }
 
 function ensureMount(){
@@ -280,16 +284,6 @@ function ensureMount(){
 # OS_MAJOR=`echo $OS_VERSION | cut -d. -f1`
 # OS_MINOR=`echo $OS_VERSION | cut -d. -f2`
 # OS_PATCH=`echo $OS_VERSION | cut -d. -f3`
-# kill all instances of a process by name
-function killbyname()
-{
-    ps ax | grep $1 | grep -v grep
-    if [ $? != 0 ]; then
-      return 0;
-    fi
-    kill -9 `ps ax | grep $1 | grep -v grep | awk '{print $1}'`
-    return 1;
-}
 function defaultError()
 {
     error "sorry, we have not yet figured out an automated solution to this problem. Please investigate and pull-request to https://github.com/atomantic/generator-dockerize"
@@ -358,7 +352,9 @@ case "$1" in
         fi
 
         # setup docker-compose.yml
-        cat docker-compose.tmpl | sed "s~_PWD_~"$(pwd)"$APP_LOC~" > docker-compose.yml
+        me=$(whoami)
+        dir=$(pwd)
+        cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
 
         # run dev.init instructions (install base npm modules, etc)
         source ./dev.init.sh

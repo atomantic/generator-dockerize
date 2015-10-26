@@ -3,5 +3,5 @@ web:
   ports:
    - "<%= externalPort %>:<%= internalPort %>"
   volumes:
-   - /rsync_PWD_:/<%= apploc %>
+   - _SYNCDIR_:/<%= apploc %>
   env_file: .env
