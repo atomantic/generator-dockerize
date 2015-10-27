@@ -204,7 +204,6 @@ function ensurePort(){
 }
 
 function dockerStop(){
-  # pkill docker-osx-dev
   running "stopping rsync"
   stopRsync
   ok
