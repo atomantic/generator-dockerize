@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.6.2                        #
+# DockerDev: 1.6.3                        #
 ###########################################
 
 # project specific config
@@ -19,6 +19,7 @@ source ./dev.config
 # docker-compose will strip underscores from the app name to tack on _web
 APP_NAME_LOCAL=${APP_NAME//_/}"_web"
 REMOTE_NAME="$DOCKER_REPO/$APP_ORG/$APP_NAME"
+RSYNC_URL="http://distro.ibiblio.org/tinycorelinux"
 
 ###
 # echo helper functions
@@ -234,7 +235,7 @@ function ensureDocker() {
       # vm doesn't exist
       action "$VM_NAME vm does not exist. Creating it"
 
-      docker-machine --debug create -d virtualbox $VM_NAME
+      docker-machine create -d virtualbox $VM_NAME
     fi
     docker-machine ls | grep $VM_NAME | grep Running > /dev/null 2>&1
     if [[ $? != 0 ]]; then
@@ -258,6 +259,19 @@ function startRsync(){
   stopRsync
   dir=$(pwd);
   docker-rsync -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
+  if [[ $? != 0 ]]; then
+    bot "Fixing URL path in $VM_NAME"
+    if [[ "$(docker-machine ssh $VM_NAME 'cat /opt/tcemirror')" != "$RSYNC_URL" ]]; then
+      docker-machine ssh $VM_NAME "echo '$RSYNC_URL' > /opt/tcemirror"
+    fi
+    bot "Trying docker-rsync again"
+    docker-rsync -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
+    if [[ $? != 0 ]]; then
+      warn "Something went wrong with loading rsync"
+    else
+      ok
+    fi
+  fi
 }
 
 function stopRsync(){
@@ -396,7 +410,8 @@ case "$1" in
         if [ -z $1 ]; then
           # run any version deployed to docker hub
           bot "checking $REMOTE_NAME for version tag $2"
-          docker run -i -t $REMOTE_NAME:$2 bash
+          docker run -t $REMOTE_NAME:$2
+          docker exec -i -t $(docker ps | grep $REMOTE_NAME:$2 | awk '{print $1;}') bash
           exit $?;
         fi
         instance=$(docker ps | grep $APP_NAME_LOCAL | awk '{print $1;}')
@@ -422,7 +437,7 @@ case "$1" in
           dockerStart background
         fi
 
-        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $VM_NAME
+        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL $VM_NAME
         ok "done"
         ;;
     update)
