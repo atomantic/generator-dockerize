@@ -431,13 +431,7 @@ case "$1" in
         ;;
     test)
         ensureDocker
-        docker ps | grep $APP_NAME_LOCAL
-        if [ $? != 0 ]; then
-          bot "starting app in background"
-          dockerStart background
-        fi
-
-        test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $VM_NAME
+        test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL $VM_NAME
         ok "done"
         ;;
     update)
