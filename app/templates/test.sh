@@ -17,7 +17,7 @@ internal_port=<%= internalPort %>
 wd=$(pwd);
 
 function eko {
-    echo "[ $0 $version $image_name $external_port ] $1"
+    echo "[ $0 $version $image_name $external_port $vm_name ] $1"
 }
 function printTimeTaken {
     elapsed="$(($(date +%s)-start_time))"
