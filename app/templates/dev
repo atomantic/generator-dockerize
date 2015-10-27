@@ -422,7 +422,7 @@ case "$1" in
           dockerStart background
         fi
 
-        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $VM_NAME
+        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL $VM_NAME
         ok "done"
         ;;
     update)
