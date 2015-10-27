@@ -3,7 +3,7 @@
 # Description: Run tests against the docker image
 #
 if [ $# -lt 3 ]; then
-  echo "Usage: $0 version image_name external_port (vm_name)"
+  echo "Usage: $0 version image_name external_port internal_port (vm_name)"
   exit 1
 fi
 
@@ -12,12 +12,12 @@ start_time="$(date +%s)"
 version=$1
 image_name=$2
 external_port=$3
-vm_name=$4
-internal_port=<%= internalPort %>
+internal_port=$4
+vm_name=$5
 wd=$(pwd);
 
 function eko {
-    echo "[ $0 $version $image_name $external_port ] $1"
+    echo "[ $0 $version $image_name $external_port $internal_port $vm_name ] $1"
 }
 function printTimeTaken {
     elapsed="$(($(date +%s)-start_time))"
@@ -47,13 +47,13 @@ if [[ $? == 0 ]]; then
 fi
 
 eko "docker run"
-docker run -p $external_port:$port_internal $image_name:$version &
+docker run -p $external_port:$internal_port $image_name:$version &
 if [ $? -ne 0 ]; then
     finish 1
 fi
 
 echo "waiting for app to boot up in image..."
-sleep <%= appBootTime %>
+sleep 5
 docker ps
 echo "testing..."
 
@@ -68,8 +68,8 @@ else
 fi
 
 ## assuming our app exposes an http service:
-eko "test curl: curl -v http://$ip_address:$port_external/"
-curl -v http://$ip_address:$port_external/
+eko "test curl: curl -v http://$ip_address:$external_port/"
+curl -v http://$ip_address:$external_port/
 if [ $? -ne 0 ]; then
   finish 1
 fi
@@ -78,6 +78,6 @@ cd app;
 
 # TODO: put your test script runner here:
 # example:
-#eko "gulp testimage --host=$ip_address --port=$port_external"
-#gulp testimage --host=$ip_address --port=$port_external
+#eko "gulp testimage --host=$ip_address --port=$external_port"
+#gulp testimage --host=$ip_address --port=$external_port
 finish $?
