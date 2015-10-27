@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.6.4                        #
+# DockerDev: 1.6.5                        #
 ###########################################
 
 # project specific config
@@ -274,7 +274,7 @@ function startRsync(){
 }
 
 function stopRsync(){
-  ps ax | grep rsync | grep $(pwd) | grep -v grep
+  ps ax | grep rsync | grep $(pwd) | grep -v grep > /dev/null 2>&1
   if [ $? != 0 ]; then
     return 0;
   fi
