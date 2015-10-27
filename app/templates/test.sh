@@ -68,8 +68,8 @@ else
 fi
 
 ## assuming our app exposes an http service:
-eko "test curl: curl -v http://$ip_address:$port_external/"
-curl -v http://$ip_address:$port_external/
+eko "test curl: curl -v http://$ip_address:$external_port/"
+curl -v http://$ip_address:$external_port/
 if [ $? -ne 0 ]; then
   finish 1
 fi
@@ -78,6 +78,6 @@ cd app;
 
 # TODO: put your test script runner here:
 # example:
-#eko "gulp testimage --host=$ip_address --port=$port_external"
-#gulp testimage --host=$ip_address --port=$port_external
+#eko "gulp testimage --host=$ip_address --port=$external_port"
+#gulp testimage --host=$ip_address --port=$external_port
 finish $?
