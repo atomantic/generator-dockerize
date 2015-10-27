@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.6.3                        #
+# DockerDev: 1.6.4                        #
 ###########################################
 
 # project specific config
@@ -204,7 +204,6 @@ function ensurePort(){
 }
 
 function dockerStop(){
-  # killbyname docker-osx-dev
   running "stopping rsync"
   stopRsync
   ok
@@ -387,10 +386,10 @@ case "$1" in
         docker-machine rm $VM_NAME;
         ok
         bot "killing virtualbox"
-        killbyname VBoxXPCOMIPCD
-        killbyname VBoxSVC
-        killbyname VBoxNetDHCP
-        killbyname VBoxHeadless
+        pkill VBoxXPCOMIPCD
+        pkill VBoxSVC
+        pkill VBoxNetDHCP
+        pkill VBoxHeadless
         ok
         bot "uninstall virtualbox"
         brew cask uninstall virtualbox
