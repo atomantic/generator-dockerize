@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.6.5                        #
+# DockerDev: 1.7.0                        #
 ###########################################
 
 # project specific config
@@ -379,24 +379,43 @@ case "$1" in
         dockerStart
         ;;
     purge)
+        bot "Starting Purge. ensuring rsync isn't running..."
         stopRsync
-        shellinit
-        bot "destroying the dockerized-vm machine"
-        docker-machine kill $VM_NAME;
-        docker-machine rm $VM_NAME;
         ok
-        bot "killing virtualbox"
-        pkill VBoxXPCOMIPCD
-        pkill VBoxSVC
-        pkill VBoxNetDHCP
-        pkill VBoxHeadless
-        ok
-        bot "uninstall virtualbox"
-        brew cask uninstall virtualbox
-        ok
-        bot "uninstall docker components"
-        brew uninstall docker docker-machine docker-compose
-        ok
+        bot "dockerized-vm machine"
+        read -r -p "Shall I destroy this machine (with all docker images/containers in it)? [Y|n]" response
+        if [[ $response =~ ^(no|n|N) ]];then
+          bot "skipping..."
+        else
+          action "destroying the dockerized-vm machine"
+          docker-machine kill $VM_NAME;
+          docker-machine rm $VM_NAME;
+          ok
+        fi
+        bot "VirtualBox Software"
+        read -r -p "Uninstall VirtualBox? [y|N]" response
+        if [[ $response =~ ^(y|Y|yes) ]];then
+          action "killing virtualbox"
+          pkill VBoxXPCOMIPCD
+          pkill VBoxSVC
+          pkill VBoxNetDHCP
+          pkill VBoxHeadless
+          ok
+          bot "uninstall virtualbox"
+          brew cask uninstall virtualbox
+          ok
+        else
+          bot "skipping..."
+        fi
+        bot "Docker Software"
+        read -r -p "Uninstall Docker Components? [y|N]" response
+        if [[ $response =~ ^(y|Y|yes) ]];then
+          action "uninstalling docker, docker-machine and docker-compose"
+          brew uninstall docker docker-machine docker-compose
+          ok
+        else
+          bot "skipping..."
+        fi
         bot "run 'dev init' again"
         ;;
     restart)
