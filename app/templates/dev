@@ -10,8 +10,10 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 1.7.0                        #
+# @maintainer Joseph Sturtevant           #
+# DockerDev: 1.10.0                       #
 ###########################################
+
 
 # project specific config
 source ./dev.config
@@ -19,7 +21,9 @@ source ./dev.config
 # docker-compose will strip underscores from the app name to tack on _web
 APP_NAME_LOCAL=${APP_NAME//_/}"_web"
 REMOTE_NAME="$DOCKER_REPO/$APP_ORG/$APP_NAME"
-RSYNC_URL="http://distro.ibiblio.org/tinycorelinux"
+RSYNC_URL="http://repo.tinycorelinux.net/"
+VPN_KEY=`echo "show State:/Network/Service/com.cisco.anyconnect/DNS" | scutil`
+HOST_DOCKER_DAEMON_PORT=2376
 
 ###
 # echo helper functions
@@ -30,35 +34,24 @@ COL_RESET=$ESC_SEQ"39;49;00m"
 COL_RED=$ESC_SEQ"31;01m"
 COL_GREEN=$ESC_SEQ"32;01m"
 COL_YELLOW=$ESC_SEQ"33;01m"
-COL_BLUE=$ESC_SEQ"34;01m"
-COL_MAGENTA=$ESC_SEQ"35;01m"
-COL_CYAN=$ESC_SEQ"36;01m"
 
 function ok() {
-    echo -e "$COL_GREEN[ok]$COL_RESET "$1
+  echo -e "$COL_GREEN[ok]$COL_RESET "$1
 }
-
 function bot() {
-    echo
-    echo -e "$COL_GREEN\[._.]/$COL_RESET - "$1
+  echo; echo -e "$COL_GREEN\[._.]/$COL_RESET - "$1
 }
-
 function running() {
-    echo
-    echo -en " ⇒ "$1"..."
+  echo; echo -en " ⇒ "$1"..."
 }
-
 function action() {
-    echo -e "$COL_YELLOW[action]$COL_RESET"
-    echo -en " ⇒ "$1"..."
+  echo -e "$COL_YELLOW[action]$COL_RESET"; echo -en " ⇒ "$1"..."
 }
-
 function warn() {
-    echo -e "$COL_YELLOW[warning]$COL_RESET "$1
+  echo -e "$COL_YELLOW[warning]$COL_RESET "$1
 }
-
 function error() {
-    echo -e "$COL_RED[error]$COL_RESET "$1
+  echo -e "$COL_RED[error]$COL_RESET "$1
 }
 
 ###
@@ -156,11 +149,17 @@ function dockerStart(){
 
     # still working on VPN fix
     #ensurePort $APP_PORT_EXTERNAL
+
     running "starting rsync into $VM_NAME"
     startRsync
     ok
 
-    APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
+    APPURL=""
+    if [[ "${VPN_KEY}" == *"No such key"* ]]; then
+      APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
+    else
+      APPURL=http://localhost:$APP_PORT_EXTERNAL
+    fi
     # instead of loading the VBox IP, we are routing localhost:$APP_PORT_EXTERNAL to VM
     # APPURL=http://localhost:$APP_PORT_EXTERNAL
 
@@ -203,6 +202,111 @@ function ensurePort(){
   ok
 }
 
+function vpnEnv(){
+  echo "=====Add these to your environment to access Docker directly through VPN====="
+  echo "export DOCKER_TLS_VERIFY='1'"
+  echo "export DOCKER_HOST='tcp://localhost:${HOST_DOCKER_DAEMON_PORT}'"
+  echo "export DOCKER_CERT_PATH='${HOME}/.docker/machine/machines/${VM_NAME}'"
+  echo "export DOCKER_MACHINE_NAME='${VM_NAME}'"
+}
+
+function dockerVPN(){
+  #Author: Onejli
+  #Source: https://github.com/onejli/docker-vpn-helper
+  #Modified by: Joseph Sturtevant
+
+  #Modified code from source to have it work in dev script
+
+  GUEST_STATUS=`docker-machine status ${VM_NAME} 2>&1`
+  set -e
+  if [ "${GUEST_STATUS}" ==  "unable to load host: Error: Host does not exist: ${VM_NAME}" ]; then
+      #Create a new Docker host if it doesn't already exist
+      if [[ "${VPN_KEY}" != *"No such key"* ]]; then
+          printf "\nPlease disconnect from the VPN before creating VM,\nthen reconnect to VPN and run command again"
+          exit 1
+      fi
+
+      VBOX_PROCS=`pgrep -f "VirtualBox.app" || exit 0`
+      if [ -n "${VBOX_PROCS}" ]; then
+          echo "Please stop all VirtualBox.app processes"
+          echo ${VBOX_PROCS}
+          exit 2
+      fi
+
+      #TODO Always reload these if the routing table doesn't have vboxnet entries?  Either we've:
+      #1. Disconnected from the VPN and the VPN client has removed the routes without restoring them
+      #       -> The VirtualBox kernel modules are unhappy and can't re-add the routes
+      #          We *must* restart the kernel modules to recover from this situation
+      #2. Started on a fresh host that hasn't connected to VPN...yet
+      #       -> Starting any VirtualBox VM should create the routes
+      #          Restarting the kernel modules isn't needed, but doesn't cost us anything (other than time)
+      #3. Started on a host where VirtualBox isn't configured with *any* host-only network adapters
+      #       -> No routes are needed or will ever be added
+      #          Restarting the kernel modules isn't needed, but doesn't cost us anything (other than time)
+
+      #TODO Expose this as a standalone command (with the pgrep sanity check)
+      echo "=====Restarting VirtualBox kernel modules====="
+      #We only really need to restart the VirtualBox network kernel modules, but it's easier to restart everything
+      sudo /Library/Application\ Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh restart
+
+      echo "=====[${VM_NAME}] Creating Docker host====="
+      docker-machine create -d virtualbox ${VM_NAME}
+
+  elif [ "${GUEST_STATUS}" == "Stopped" ]; then
+      #Start the Docker host if it isn't already running
+      echo "=====[${VM_NAME}] Starting Docker host====="
+      docker-machine start ${VM_NAME}
+  fi
+
+  #Add a port forwarding rule if it doesn't already exist
+  GUEST_DOCKER_DAEMON_PORT=`VBoxManage showvminfo ${VM_NAME} | grep "guest port = 2376" | sed -e "s/^.*host port = \([0-9]*\),.*/\1/"`
+  if [ -z "${GUEST_DOCKER_DAEMON_PORT}" ]; then
+      #Work around the Cisco VPN client bogarting the routing table by using port forwarding for the Docker daemon in the VM
+      echo "=====[${VM_NAME}] Inserting Docker daemon port forwarding rule====="
+      #To allow physical device to talk to VM
+      VBoxManage controlvm ${VM_NAME} natpf1 dockerdaemon,tcp,127.0.0.1,${HOST_DOCKER_DAEMON_PORT},,2376
+      #To access app container
+      VBoxManage controlvm ${VM_NAME} natpf1 $APP_NAME_LOCAL,tcp,127.0.0.1,$APP_PORT_EXTERNAL,,$APP_PORT_EXTERNAL
+  fi
+
+  #The Docker daemon and client are protected by mutual auth, but docker-machine creates a cert for the Docker daemon that
+  #only binds to the IP of VirtualBox's host-only adapter (that's unroutable because of the Cisco VPN client).  Let's fix
+  #this by creating a cert that binds to localhost, 127.0.0.1, *and* the IP of the Virtualbox host-only adapter so the Docker
+  #daemon can service requests from the forwarded port *and* the host-only adapter.
+  DOCKER_MACHINES_HOME=${HOME}/.docker/machine/machines
+  DOCKER_CERTS_HOME=${HOME}/.docker/machine/certs
+  SERVER_PEM_LOCATION=/var/lib/boot2docker/server.pem
+  SERVER_PEM=`docker-machine ssh ${VM_NAME} "openssl x509 -noout -text -in ${SERVER_PEM_LOCATION}"`
+  #TODO Check the cert that the daemon is serving rather than the cert on disk?
+  #     openssl s_client -connect localhost:2376 -tls1 -CAfile ${DOCKER_CERTS_HOME}/ca.pem -cert ${DOCKER_CERTS_HOME}/cert.pem -key ${DOCKER_CERTS_HOME}/key.pem 2>/dev/null </dev/null | openssl x509 -outform PEM
+
+  #TODO Regenerate the cert if it's going to expire in the next day?
+  #     openssl x509 -checkend 86400 -noout -in ${SERVER_PEM_LOCATION}
+
+  #TODO Expose manual regeneration of the cert as a standalone command
+  if [[ ${SERVER_PEM} != *"CN=localhost"* && ${SERVER_PEM} != *"IP:127.0.0.1"* ]]; then
+      #(Re)create the cert if it's missing localhost or 127.0.0.1
+      echo "=====[${VM_NAME}] Creating a new Docker daemon certificate====="
+      #Let's be good citizens.  Preserve the original cert and re-use the private key.
+      mv ${DOCKER_MACHINES_HOME}/${VM_NAME}/server.pem ${DOCKER_MACHINES_HOME}/${VM_NAME}/server.pem.bak
+
+      #Create a new cert for the Docker daemon and sign it
+      openssl req -subj "/CN=localhost" -sha256 -new -key ${DOCKER_MACHINES_HOME}/${VM_NAME}/server-key.pem -out ${DOCKER_MACHINES_HOME}/${VM_NAME}/server.csr
+      echo "subjectAltName = IP:$(docker-machine ip ${VM_NAME}),IP:127.0.0.1" > ${DOCKER_MACHINES_HOME}/${VM_NAME}/extfile.cnf
+      openssl x509 -req -days 365 -sha256 -in ${DOCKER_MACHINES_HOME}/${VM_NAME}/server.csr -CA ${DOCKER_CERTS_HOME}/ca.pem -CAkey ${DOCKER_CERTS_HOME}/ca-key.pem -set_serial 0x6f6e656a6c69 -out ${DOCKER_MACHINES_HOME}/${VM_NAME}/server.pem -extfile ${DOCKER_MACHINES_HOME}/${VM_NAME}/extfile.cnf
+
+      #Deploy the new cert to the Docker host and restart the Docker daemon to pick up the change
+      echo "=====[${VM_NAME}] Deploying Certificate to Docker host====="
+      NEW_SERVER_PEM=`cat ${DOCKER_MACHINES_HOME}/${VM_NAME}/server.pem`
+      docker-machine ssh ${VM_NAME} "echo -e '${NEW_SERVER_PEM}' | sudo tee ${SERVER_PEM_LOCATION}"
+      echo "=====[${VM_NAME}] Restarting Docker daemon====="
+      docker-machine ssh ${VM_NAME} "sudo /etc/init.d/docker restart"
+      vpnEnv
+      #Give docker time to restart
+      sleep 1;
+  fi
+}
+
 function dockerStop(){
   running "stopping rsync"
   stopRsync
@@ -220,7 +324,18 @@ function shellinit(){
     # maybe a fix in here somewhere: https://github.com/docker/machine/issues/1031
     #ensurePort 2376
     #export DOCKER_HOST=tcp://127.0.0.1:2376;
-    eval "$(docker-machine env $VM_NAME)"
+    if [[ "${VPN_KEY}" == *"No such key"* ]]; then
+      #We're not connected to VPN, set environment variables as normal
+      eval "$(docker-machine env $VM_NAME)"
+    else
+      #We are connected to VPN. Run helper script and set new environment variables
+      #Only difference between this and $(docker-machine env $VM_NAME) is the DOCKER_HOST
+      dockerVPN
+      export DOCKER_TLS_VERIFY="1"
+      export DOCKER_HOST="tcp://localhost:2376"
+      export DOCKER_CERT_PATH="$HOME/.docker/machine/machines/$VM_NAME"
+      export DOCKER_MACHINE_NAME="$VM_NAME"
+    fi
     ok
 }
 
@@ -232,9 +347,15 @@ function ensureDocker() {
     docker-machine ls | grep $VM_NAME > /dev/null 2>&1
     if [[ $? != 0 ]]; then
       # vm doesn't exist
-      action "$VM_NAME vm does not exist. Creating it"
+      if [[ "${VPN_KEY}" == *"No such key"* ]]; then
+        action "$VM_NAME vm does not exist. Creating it"
 
-      docker-machine create -d virtualbox $VM_NAME
+        docker-machine create -d virtualbox $VM_NAME
+      else
+        printf "\n"
+        warn "**VPN Connection Detected**\nPlease disconnect from VPN and run ./dev vpn_setup before reconnecting"
+        exit 1
+      fi
     fi
     docker-machine ls | grep $VM_NAME | grep Running > /dev/null 2>&1
     if [[ $? != 0 ]]; then
@@ -244,12 +365,12 @@ function ensureDocker() {
     ok
 
     shellinit
-
+    set +e
     docker ps > /dev/null 2>&1;
     if [[ $? != 0 ]]; then
       defaultError
     else
-      return 1;
+     return 1;
     fi
 }
 
@@ -257,7 +378,7 @@ function startRsync(){
   # only do one
   stopRsync
   dir=$(pwd);
-  docker-rsync -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
+  docker-rsync -watch=true -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
   if [[ $? != 0 ]]; then
     bot "Fixing URL path in $VM_NAME"
     if [[ "$(docker-machine ssh $VM_NAME 'cat /opt/tcemirror')" != "$RSYNC_URL" ]]; then
@@ -274,11 +395,13 @@ function startRsync(){
 }
 
 function stopRsync(){
-  ps ax | grep rsync | grep $(pwd) | grep -v grep > /dev/null 2>&1
-  if [ $? != 0 ]; then
+  #Check if rsync is already running
+  if [[ $(ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}') == "" ]]; then
     return 0;
   fi
+  #Else kill any processes where rsync is running
   kill -9 `ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}'`
+  #Returning 1 stops script when on VPN
   return 1;
 }
 
@@ -292,7 +415,6 @@ function ensureMount(){
     fi
     # we will then use docker-rsync to rsync into this directory
 }
-
 # OS_VERSION=$(sw_vers -productVersion);
 # OS_MAJOR=`echo $OS_VERSION | cut -d. -f1`
 # OS_MINOR=`echo $OS_VERSION | cut -d. -f2`
@@ -303,10 +425,24 @@ function defaultError()
     exit 1;
 }
 
+#Allows VM to connect to $DOCKER_REPO insecure registry
+function insecureRegistry()
+{
+    ensureDocker
+    docker-machine ssh $VM_NAME "grep 'insecure-registry' /var/lib/boot2docker/profile" > /dev/null 2>&1
+    if [[ $? != 0 ]]; then
+      docker-machine ssh $VM_NAME "echo EXTRA_ARGS=\'--insecure-registry $DOCKER_REPO\' | sudo tee -a /var/lib/boot2docker/profile"
+      docker-machine ssh $VM_NAME "sudo /etc/init.d/docker restart"
+      sleep 1
+      docker-machine restart $VM_NAME
+    fi
+    ok
+}
+
 case "$1" in
     clean)
         # purges the docker images relating to this app
-        shellinit
+        ensureDocker
         docker ps -a | grep $APP_NAME_LOCAL
         if [[ $? == 0 ]]; then
           docker rm -f $(docker ps -a | grep $APP_NAME_LOCAL | awk '{print $1;}')
@@ -327,14 +463,14 @@ case "$1" in
         ok
         ;;
     init)
-        bot "Hi, I'm going to setup/update your environment and startup the app."
+        bot "Hi, I'm going to setup/update your environment and startup the app using Docker"
 
         bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
+        need_tools=0
         install_homebrew
         require_tap synack/docker
         require_brew docker-rsync
-        need_tools=0
 
         needed_software=( "docker" "docker-compose" "docker-machine" "vboxmanage" )
         for sft in "${needed_software[@]}"; do
@@ -345,38 +481,33 @@ case "$1" in
         done
 
         if [ $need_tools == 1 ]; then
-          bot "You can either install the base set of tools with Docker Toolbox: https://www.docker.com/toolbox\nOr install via homebrew."
-          read -r -p "Use Homebrew? [Y|n]" response
-          if [[ ! $response =~ ^(no|n|N) ]];then
-              install_brewcask
-              require_brew docker
-              require_brew docker-compose
-              require_brew docker-machine
-              require_cask virtualbox
-              ok
-          else
-            read -r -p "Did you install Docker Toolkit? [Y|n]" responseToolbox
-            if [[ $responseToolbox =~ ^(no|n|N) ]];then
-              bot "well, go install Docker Toolkit, then run 'dev init' again"
-              exit 1
-            fi
-            ok
-          fi
+          install_brewcask
+          require_cask dockertoolbox
+          ok
         fi
 
         # setup docker-compose.yml
         me=$(whoami)
         dir=$(pwd)
         cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
-
         # run dev.init instructions (install base npm modules, etc)
         source ./dev.init.sh
 
         ensureMount
 
-        ensureDocker
+        echo "launching quickstart shell. once this is done"
+        echo "cd "$(pwd)
+        echo "./dev start"
 
-        dockerStart
+        for i in $(seq 5 1);do
+          bot "$i...";
+        sleep 1;
+        done
+
+        bash --login '/Applications/Docker/Docker Quickstart Terminal.app/Contents/Resources/Scripts/start.sh'
+        ;;
+    insecure_registry)
+        insecureRegistry
         ;;
     purge)
         bot "Starting Purge. ensuring rsync isn't running..."
@@ -418,6 +549,10 @@ case "$1" in
         fi
         bot "run 'dev init' again"
         ;;
+    rebuild)
+        docker-compose build
+        dockerStart $1
+        ;;
     restart)
         ensureDocker
         dockerStop
@@ -449,7 +584,7 @@ case "$1" in
         ;;
     test)
         ensureDocker
-        test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL $VM_NAME
+        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL $VM_NAME
         ok "done"
         ;;
     update)
@@ -487,19 +622,32 @@ case "$1" in
         sudo route -n add -net $ip_sub.0/24 -interface $VBOXNET
         ok
         ;;
+    vpn_env)
+        vpnEnv
+        ;;
+    vpn_setup)
+        #Creating the docker-machine VM while on the VPN seems to hang.
+        #Creating the VM before connecting to VPN seems to address issue.
+        dockerVPN
+        ;;
     *)
         bot "Hi, I can do a few helpful development tricks.\n"
         echo -e "Run each as an argument to this script (e.g. './dev init'):\n"
         echo "clean - remove locally built docker containers and images relating to this app"
         echo "free - remove clutter (stopped containers and untagged images)"
         echo "init - initialize your development environment (installing and running the app)"
+        echo "insecure_registry - sets up Docker to connect to an insecure registry"
         echo "purge - uninstall virtualbox, destroy the dockerized-vm machine and uninstall all docker software"
+        echo "rebuild - rebuild the service"
         echo "restart - restart the service"
         echo "shell {version} - get a bash shell on the current running system or on a version from the hub"
         echo "start - start the service"
         echo "stop - stop the service"
         echo "test - test the service by running a docker image and pointing tests at the image"
+        echo "tool - choose between docker-machine or vagrant"
         echo "update - update the dev tool with the latest automation scripts"
         echo "vpn - fix routing table after disconnecting from Cisco Anyconnect VPN client"
+        echo "vpn_env - display environment variables you need to export to access Docker through VPN"
+        echo "vpn_setup - use while disconnected from VPN to setup Docker for VPN"
         ;;
 esac
