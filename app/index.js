@@ -1,4 +1,4 @@
-var _ = require('lodash-node');
+var _ = require('lodash');
 var yeoman = require('yeoman-generator');
 var chalk = require('chalk');
 var yosay = require('yosay');
@@ -143,7 +143,7 @@ module.exports = yeoman.generators.Base.extend({
       );
       if (this.userData.sampleApp) {
         this.fs.copy(
-            this.templatePath('app/index.html'),
+          this.templatePath('app/index.html'),
           this.destinationPath(this.userData.apploc.substr(1) + '/index.html')
         );
       }
