@@ -57,6 +57,15 @@ run `dev help` to get a list of options on the `dev` script
 
 To get updates to the dockerized dev toolkit after you run the generator, simply run `dev update`. This will fetch the latest dev toolkit from github and replace it in your project. Then you can use any new automated fixes for docker that are in the latest release.
 
+## Contributing
+Please contribute! We welcome all pull-requests. The current setup makes certain assumptions that we probably don't always want. TODO:
+* add question on whether you use maven or destilli (or another option) for build, then drop the appropriate config file (or no file at all)
+* ask if you need a custom `dev.init.sh` script and handle that, removing it if you don't
+* ask what docker-compose configs should be added
+* ask what exec start command should be dropped in
+
+We could make this whole thing work from yo instead of requiring users to manually adjust their files after scaffolding :) 
+
 ## File Watch Support with Docker-Rsync
 
 This toolkit starts up docker-rsync along with the docker VM as a way of keeping your host OS code up-to-date inside the VM->Container. This is the gist of how that works:
