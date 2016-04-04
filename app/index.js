@@ -66,9 +66,14 @@ module.exports = yeoman.generators.Base.extend({
         default: 'centos:7'
       }, {
         type: 'confirm',
+        name: 'init',
+        message: 'Does your app require custom initialization beyond docker (sub-module update/build, npm install, etc) that you want to manage in a custom init script?',
+        default: false
+      }, {
+        type: 'confirm',
         name: 'sampleApp',
         message: 'install sample index.html app?',
-        default: true
+        default: false
       }
     ];
 
@@ -76,6 +81,7 @@ module.exports = yeoman.generators.Base.extend({
       this.userData = {
         apploc: props.apploc,
         appname: props.appname,
+        init: props.init,
         org: props.org,
         externalPort: parseInt(_.random(3, 9) + '' + _.random(0, 9) + '' + _.random(0, 9) + '' + _.random(0, 9), 10),
         internalPort: parseInt(props.port, 10),
@@ -113,11 +119,13 @@ module.exports = yeoman.generators.Base.extend({
         this.destinationPath('dev.config'),
         this.userData
       );
-      this.fs.copyTpl(
-        this.templatePath('dev.init.sh'),
-        this.destinationPath('dev.init.sh'),
-        this.userData
-      );
+      if(this.userData.init){
+        this.fs.copyTpl(
+          this.templatePath('dev.init.sh'),
+          this.destinationPath('dev.init.sh'),
+          this.userData
+        );
+      }
       this.fs.copyTpl(
         this.templatePath('docker-compose.tmpl'),
         this.destinationPath('docker-compose.tmpl'),
