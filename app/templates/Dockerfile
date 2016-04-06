@@ -8,7 +8,7 @@ WORKDIR app
 
 RUN chown -R docker:docker /app
 
-USER node
+USER docker
 
 ADD .env /.env
 RUN . /.env
