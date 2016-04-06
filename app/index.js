@@ -143,16 +143,16 @@ module.exports = yeoman.generators.Base.extend({
       );
       this.fs.copy(
         this.templatePath('app/.rsyncignore'),
-        this.destinationPath(this.userData.apploc.substr(1) + '/.rsyncignore')
+        this.destinationPath(this.userData.apploc + '/.rsyncignore')
       );
       this.fs.copy(
         this.templatePath('app/exec'),
-        this.destinationPath(this.userData.apploc.substr(1) + '/exec')
+        this.destinationPath(this.userData.apploc + '/exec')
       );
       if (this.userData.sampleApp) {
         this.fs.copy(
           this.templatePath('app/index.html'),
-          this.destinationPath(this.userData.apploc.substr(1) + '/index.html')
+          this.destinationPath(this.userData.apploc + '/index.html')
         );
       }
 
