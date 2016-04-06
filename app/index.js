@@ -99,7 +99,7 @@ module.exports = yeoman.generators.Base.extend({
   writing: {
     provision: function() {
       'use strict';
-      mkdirp(this.userData.apploc.substr(1));
+      mkdirp(this.userData.apploc);
 
       this.fs.copy(
         this.templatePath('.dockerignore'),
