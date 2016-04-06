@@ -11,8 +11,18 @@ The `dev` script automates solutions to problems with running docker on OSX.
 
 ## Usage
 
+if you are totally new to nodejs, you can install via `./dev init`.
+This will install nvm (node version manager via Homebrew, then install node `stable` and run `npm install -g yo git://github.com/atomantic/generator-dockerize.git` for you).
+
+You can run the `dev init` script from curl like so:
 ```
-npm install -g yo generator-dockerize
+curl https://github.com/raw/atomantic/generator-dockerize/master/dev | sh -s init
+```
+
+If you are already using node and have npm, just run this:
+
+```
+npm install -g yo git://github.com/atomantic/generator-dockerize.git
 # cd to your project directory
 yo dockerize
 ```
@@ -64,7 +74,7 @@ Please contribute! We welcome all pull-requests. The current setup makes certain
 * ask what docker-compose configs should be added
 * ask what exec start command should be dropped in
 
-We could make this whole thing work from yo instead of requiring users to manually adjust their files after scaffolding :) 
+We could make this whole thing work from yo instead of requiring users to manually adjust their files after scaffolding :)
 
 ## File Watch Support with Docker-Rsync
 
