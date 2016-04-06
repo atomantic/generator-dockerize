@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+###########################################
+# This is the project's developer toolkit #
+# @author Adam Eivy                       #
+###########################################
+
+###
+# echo helper functions
+###
+# Colors
+ESC_SEQ="\x1b["
+COL_RESET=$ESC_SEQ"39;49;00m"
+COL_RED=$ESC_SEQ"31;01m"
+COL_GREEN=$ESC_SEQ"32;01m"
+COL_YELLOW=$ESC_SEQ"33;01m"
+
+function ok() {
+    echo -e "$COL_GREEN[ok]$COL_RESET "$1
+}
+
+function bot() {
+    echo
+    echo -e "$COL_GREEN\[._.]/$COL_RESET - "$1
+}
+
+function running() {
+    echo
+    echo -en " ⇒ "$1"..."
+}
+
+function action() {
+    echo -e "$COL_YELLOW[action]$COL_RESET"
+    echo -en " ⇒ "$1"..."
+}
+
+function error() {
+    echo -e "$COL_RED[error]$COL_RESET "$1
+}
+
+function require_npm() {
+    sourceNVM
+    nvm use stable
+    running "npm $1"
+    npm list -g --depth 0 | grep $1@ > /dev/null
+    if [[ $? != 0 ]]; then
+        action "npm install -g $1"
+        npm install -g $1
+    fi
+    ok
+}
+
+function sourceNVM(){
+    export NVM_DIR=~/.nvm
+    source $(brew --prefix nvm)/nvm.sh
+}
+
+
+function require_nvm() {
+    mkdir -p ~/.nvm
+    cp $(brew --prefix nvm)/nvm-exec ~/.nvm/
+    sourceNVM
+    nvm install $1
+    if [[ $? != 0 ]]; then
+        action "installing nvm"
+        curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+        . ~/.bashrc
+        nvm install $1
+    fi
+    nvm use $1
+    ok
+}
+
+case "$1" in
+    init | setup)
+        echo "initializing dev environment..."
+
+        running "looking for node"
+        which node
+        if [[ $? != 0 ]]; then
+            running "checking homebrew"
+            brew_bin=$(which brew) 2>&1 > /dev/null
+            if [[ $? != 0 ]]; then
+                action "installing homebrew"
+                ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+                if [[ $? != 0 ]]; then
+                    error "unable to install homebrew, script $0 abort!"
+                    exit -1
+                fi
+            fi
+            ok
+            action "nvm install stable"
+            require_nvm stable
+            if [[ $? != 0 ]]; then
+                error "failed to install node! aborting..."
+                exit -1
+            fi
+        fi
+        ok
+        bot "ensuring you have yo and generator-dockerize globally installed via npm"
+        require_npm yo
+        require_npm git://github.com/atomantic/generator-dockerize.git
+        ok
+        ;;
+    test)
+      if [[ -e ./dev.init.sh ]]; then
+        source ./dev.init.sh
+      else
+        echo 'nope'
+      fi
+      ;;
+    build)
+      doctoc .
+      ;;
+    *)
+        echo -e "Run each as an argument to this script (e.g. './dev init'):\n"
+        echo "init - (alias setup) initialize your development environment (installs doctoc for generating readme table of contents)"
+        echo "build - builds project"
+        ;;
+esac
