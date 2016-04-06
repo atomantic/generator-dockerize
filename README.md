@@ -16,7 +16,7 @@ This will install nvm (node version manager via Homebrew, then install node `sta
 
 You can run the `dev init` script from curl like so:
 ```
-curl https://github.com/raw/atomantic/generator-dockerize/master/dev | sh -s init
+curl https://raw.githubusercontent.com/atomantic/generator-dockerize/master/dev | sh -s init
 ```
 
 If you are already using node and have npm, just run this:
