@@ -6,7 +6,7 @@ RUN useradd -c 'Docker user' -m -d /home/docker -s /bin/bash docker
 ADD <%= apploc %> app
 WORKDIR app
 
-RUN chown -R dockerdocker /app
+RUN chown -R docker:docker /app
 
 USER node
 
