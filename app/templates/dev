@@ -11,7 +11,7 @@
 #
 # @author Adam Eivy                       #
 # @maintainer Joseph Sturtevant           #
-# DockerDev: 2.0.0                       #
+# DockerDev: 2.1.0                        #
 ###########################################
 
 
@@ -239,6 +239,10 @@ function ensureDocker() {
 }
 
 function startRsync(){
+  if [[ $RSYNC != true ]];then
+    echo '-----------------------------------------------------------skipping rsync'
+    return 0
+  fi
   # only do one
   stopRsync
   dir=$(pwd);
@@ -259,6 +263,9 @@ function startRsync(){
 }
 
 function stopRsync(){
+  if [[ $RSYNC != true ]];then
+    return 0
+  fi
   #Check if rsync is already running
   if [[ $(ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}') == "" ]]; then
     return 0;
@@ -293,7 +300,12 @@ function defaultError()
 function insecureRegistry()
 {
     ensureDocker
-    docker-machine ssh $VM_NAME "grep 'insecure-registry' /var/lib/boot2docker/profile" > /dev/null 2>&1
+    REGISTRY=$DOCKER_REPO
+    if [ -n $1 ]; then
+      REGISTRY=$1
+    fi
+    echo "setting insecure registry: "$REGISTRY;
+    docker-machine ssh $VM_NAME "grep 'insecure-registry $REGISTRY' /var/lib/boot2docker/profile" > /dev/null 2>&1
     if [[ $? != 0 ]]; then
       docker-machine ssh $VM_NAME "sudo sed -i \"s/EXTRA_ARGS='/EXTRA_ARGS='\n--insecure-registry $DOCKER_REPO/\" /var/lib/boot2docker/profile"
       docker-machine ssh $VM_NAME "sudo /etc/init.d/docker restart"
@@ -334,7 +346,9 @@ case "$1" in
         need_tools=0
         install_homebrew
         require_tap synack/docker
-        require_brew docker-rsync
+        if [[ $RSYNC == true ]];then
+          require_brew docker-rsync
+        fi
 
         needed_software=( "docker" "docker-compose" "docker-machine" "vboxmanage" )
         for sft in "${needed_software[@]}"; do
@@ -354,11 +368,8 @@ case "$1" in
         me=$(whoami)
         dir=$(pwd)
         cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
-
-        # run dev.init instructions (if it exists)
-        if [[ -e ./dev.init.sh ]]; then
-          source ./dev.init.sh
-        fi
+        # run dev.init instructions (install base npm modules, etc)
+        source ./dev.init.sh
 
         ensureMount
 
@@ -369,7 +380,7 @@ case "$1" in
         bash --login '/Applications/Docker/Docker Quickstart Terminal.app/Contents/Resources/Scripts/start.sh'
         ;;
     insecure_registry)
-        insecureRegistry
+        insecureRegistry $2
         ;;
     purge)
         bot "Starting Purge. ensuring rsync isn't running..."
@@ -452,7 +463,7 @@ case "$1" in
         ;;
     update)
         bot "updating the dev toolkit"
-        curl -o dev.latest https://raw.githubusercontent.com/atomantic/generator-dockerize/master/app/templates/dev
+        curl -o dev.latest https://github.disney.com/raw/DTSS/generator-dockerize/dtss/app/templates/dev
         ok "fetched latest"
         oldversion=$(grep "^# DockerDev:" dev | sed 's/[^0-9.]//g');
         newversion=$(grep "^# DockerDev:" dev.latest | sed 's/[^0-9.]//g');
