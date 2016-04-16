@@ -1,3 +1,5 @@
+[![Known Vulnerabilities](https://snyk.io/test/npm/generator-dockerize/badge.svg)](https://snyk.io/test/npm/generator-dockerize)
+
 # Yeoman Docker Generator
 
 This Yeoman Generator will add a Docker scaffolding to your project, including Dockerfile, docker-compose and a dev script to simplify management of Docker.
