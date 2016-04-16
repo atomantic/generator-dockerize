@@ -71,6 +71,11 @@ module.exports = yeoman.generators.Base.extend({
         default: false
       }, {
         type: 'confirm',
+        name: 'rsync',
+        message: 'Do you want to use rsync to sync files inside your docker containers?',
+        default: false
+      }, {
+        type: 'confirm',
         name: 'sampleApp',
         message: 'install sample index.html app?',
         default: false
@@ -87,6 +92,7 @@ module.exports = yeoman.generators.Base.extend({
         internalPort: parseInt(props.port, 10),
         dockerHub: props.dockerHub,
         fromOS: props.fromOS,
+        rsync: props.rsync,
         appBootTime: props.appBootTime,
         vmCreateTime: props.vmCreateTime,
         sampleApp: props.sampleApp

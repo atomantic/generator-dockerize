@@ -366,11 +366,13 @@ case "$1" in
         # setup docker-compose.yml
         me=$(whoami)
         dir=$(pwd)
-        if [[ -a docker-compose.tmpl ]]; then
+        if [[ -e ./docker-compose.tmpl ]]; then
           cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
         fi
-        # run dev.init instructions (install base npm modules, etc)
-        source ./dev.init.sh
+        # run dev.init.sh (if it exists)
+        if [[ -e ./dev.init.sh ]]; then
+          source ./dev.init.sh
+        fi
 
         ensureMount
 
