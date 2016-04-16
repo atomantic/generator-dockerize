@@ -463,7 +463,7 @@ case "$1" in
         ;;
     update)
         bot "updating the dev toolkit"
-        curl -o dev.latest https://github.disney.com/raw/DTSS/generator-dockerize/dtss/app/templates/dev
+        curl -o dev.latest https://raw.githubusercontent.com/atomantic/generator-dockerize/master/app/templates/dev
         ok "fetched latest"
         oldversion=$(grep "^# DockerDev:" dev | sed 's/[^0-9.]//g');
         newversion=$(grep "^# DockerDev:" dev.latest | sed 's/[^0-9.]//g');
