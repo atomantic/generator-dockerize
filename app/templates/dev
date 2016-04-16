@@ -11,7 +11,7 @@
 #
 # @author Adam Eivy                       #
 # @maintainer Joseph Sturtevant           #
-# DockerDev: 2.1.1                        #
+# DockerDev: 2.1.2                        #
 ###########################################
 
 
@@ -366,7 +366,9 @@ case "$1" in
         # setup docker-compose.yml
         me=$(whoami)
         dir=$(pwd)
-        cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
+        if [[ -a docker-compose.tmpl ]]; then
+          cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
+        fi
         # run dev.init instructions (install base npm modules, etc)
         source ./dev.init.sh
 
