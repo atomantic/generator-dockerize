@@ -11,7 +11,7 @@
 #
 # @author Adam Eivy                       #
 # @maintainer Joseph Sturtevant           #
-# DockerDev: 2.1.0                        #
+# DockerDev: 2.1.1                        #
 ###########################################
 
 
@@ -240,7 +240,6 @@ function ensureDocker() {
 
 function startRsync(){
   if [[ $RSYNC != true ]];then
-    echo '-----------------------------------------------------------skipping rsync'
     return 0
   fi
   # only do one
