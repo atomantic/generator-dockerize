@@ -11,7 +11,7 @@
 #
 # @author Adam Eivy                       #
 # @maintainer Joseph Sturtevant           #
-# DockerDev: 2.1.2                        #
+# DockerDev: 2.1.1                        #
 ###########################################
 
 
@@ -382,7 +382,7 @@ case "$1" in
 
         bash --login '/Applications/Docker/Docker Quickstart Terminal.app/Contents/Resources/Scripts/start.sh'
         ;;
-    insecure_registry)
+    insecure)
         insecureRegistry $2
         ;;
     purge)
@@ -484,7 +484,7 @@ case "$1" in
         echo "clean - remove locally built docker containers and images relating to this app"
         echo "free - remove clutter (stopped containers and untagged images)"
         echo "init - initialize your development environment (installing and running the app)"
-        echo "insecure_registry - sets up Docker to connect to an insecure registry"
+        echo "insecure - sets up Docker to connect to an insecure registry"
         echo "purge - uninstall virtualbox, destroy the dockerized-vm machine and uninstall all docker software"
         echo "rebuild - rebuild the service"
         echo "restart - restart the service"
@@ -492,7 +492,6 @@ case "$1" in
         echo "start - start the service"
         echo "stop - stop the service"
         echo "test - test the service by running a docker image and pointing tests at the image"
-        echo "tool - choose between docker-machine or vagrant"
         echo "update - update the dev tool with the latest automation scripts"
         ;;
 esac
