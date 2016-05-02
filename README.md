@@ -86,6 +86,9 @@ This toolkit starts up docker-rsync along with the docker VM as a way of keeping
 
 # HISTORY
 
+## 2.2.0
+  - Native Docker for Mac/Win is now supported with `export $DOCKER_NATIVE=true` -- this is temporary until this becomes an open standard method for running docker.
+
 ## 1.7.0
   - `dev purge` is now interactive (allows you to choose which things you wish to purge/uninstall)
 

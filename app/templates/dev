@@ -11,7 +11,7 @@
 #
 # @author Adam Eivy                       #
 # @maintainer Joseph Sturtevant           #
-# DockerDev: 2.1.1                        #
+# DockerDev: 2.2.0                        #
 ###########################################
 
 
@@ -146,11 +146,12 @@ function checkInstall() {
 ###
 function dockerStart(){
 
-    running "starting rsync into $VM_NAME"
     startRsync
-    ok
-
-    APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
+    if [[ $DOCKER_NATIVE ]]; then
+      APPURL=http://localhost:$APP_PORT_EXTERNAL
+    else
+      APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
+    fi
 
     # instead of loading the VBox IP, we are routing localhost:$APP_PORT_EXTERNAL to VM
     # APPURL=http://localhost:$APP_PORT_EXTERNAL
@@ -176,7 +177,11 @@ function dockerStart(){
     if [[ $1 != "background" ]]; then
 
       bot "Launching: $APPURL"
-      bot "If the app doesn't work, you can debug it by running the following:\n\$(docker-machine env $VM_NAME > /dev/null);\ndocker exec -i -t \$(docker ps | grep $APP_NAME_LOCAL | awk '{print $1;}') bash"
+      bot "If the app doesn't work, you can debug it by running the following:"
+      if [[ -z $DOCKER_NATIVE ]]; then
+        echo "\$(docker-machine env $VM_NAME > /dev/null);"
+      fi
+      echo "docker exec -i -t \$(docker ps | grep $APP_NAME_LOCAL | awk '{print \$1;}') bash"
       # open $APPURL:$APP_PORT_EXTERNAL
       open $APPURL
 
@@ -195,9 +200,7 @@ function ensurePort(){
 }
 
 function dockerStop(){
-  running "stopping rsync"
   stopRsync
-  ok
   running "stopping docker containers"
   docker-compose stop > /dev/null 2>&1
   ok
@@ -213,6 +216,10 @@ function shellinit(){
 
 # ensure that docker is running and mapped properly to the VM
 function ensureDocker() {
+
+    if [[ $DOCKER_NATIVE ]];then
+      return 1;
+    fi
 
     running "ensuring $VM_NAME vm is running"
 
@@ -242,6 +249,8 @@ function startRsync(){
   if [[ $RSYNC != true ]];then
     return 0
   fi
+
+  running "starting rsync into $VM_NAME"
   # only do one
   stopRsync
   dir=$(pwd);
@@ -255,22 +264,23 @@ function startRsync(){
     docker-rsync -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
     if [[ $? != 0 ]]; then
       warn "Something went wrong with loading rsync"
-    else
-      ok
     fi
   fi
+  ok
 }
 
 function stopRsync(){
   if [[ $RSYNC != true ]];then
     return 0
   fi
+  running "stopping rsync"
   #Check if rsync is already running
   if [[ $(ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}') == "" ]]; then
     return 0;
   fi
   #Else kill any processes where rsync is running
   kill -9 `ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}'`
+  ok
   #Returning 1 stops script
   return 1;
 }
@@ -342,27 +352,6 @@ case "$1" in
 
         bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
-        need_tools=0
-        install_homebrew
-        require_tap synack/docker
-        if [[ $RSYNC == true ]];then
-          require_brew docker-rsync
-        fi
-
-        needed_software=( "docker" "docker-compose" "docker-machine" "vboxmanage" )
-        for sft in "${needed_software[@]}"; do
-          checkInstall $sft
-          if [ $? != 0 ]; then
-            need_tools=1
-          fi
-        done
-
-        if [ $need_tools == 1 ]; then
-          install_brewcask
-          require_cask dockertoolbox
-          ok
-        fi
-
         # setup docker-compose.yml
         me=$(whoami)
         dir=$(pwd)
@@ -373,14 +362,41 @@ case "$1" in
         if [[ -e ./dev.init.sh ]]; then
           source ./dev.init.sh
         fi
+        if [[ $RSYNC == true ]];then
+          ensureMount
+        fi
 
-        ensureMount
+        read -r -p "are you running Native Docker for Mac/Windows? [y|N]" response
+        if [[ $response =~ ^(y|Y|yes) ]];then
+          dockerStart
+        else
+          need_tools=0
+          install_homebrew
+          if [[ $RSYNC == true ]];then
+            require_tap synack/docker
+            require_brew docker-rsync
+          fi
 
-        echo "launching quickstart shell. once this is done"
-        echo "cd "$(pwd)
-        echo "./dev start"
+          needed_software=( "docker" "docker-compose" "docker-machine" "vboxmanage" )
+          for sft in "${needed_software[@]}"; do
+            checkInstall $sft
+            if [ $? != 0 ]; then
+              need_tools=1
+            fi
+          done
 
-        bash --login '/Applications/Docker/Docker Quickstart Terminal.app/Contents/Resources/Scripts/start.sh'
+          if [ $need_tools == 1 ]; then
+            install_brewcask
+            require_cask dockertoolbox
+            ok
+          fi
+
+          echo "launching quickstart shell. once this is done"
+          echo "cd "$(pwd)
+          echo "./dev start"
+
+          bash --login '/Applications/Docker/Docker Quickstart Terminal.app/Contents/Resources/Scripts/start.sh'
+        fi
         ;;
     insecure)
         insecureRegistry $2
