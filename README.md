@@ -89,6 +89,14 @@ This toolkit starts up docker-rsync along with the docker VM as a way of keeping
 ## 2.2.0
   - Native Docker for Mac/Win is now supported with `export $DOCKER_NATIVE=true` -- this is temporary until this becomes an open standard method for running docker.
 
+## 2.0.0
+  - Remove all cisco AnyConnect VPN code (now use `brew install openconnect` then  `sudo openconnect --user=$VPNUSER $VPNHOST` instead of Cisco Client). If this solution is still interesting to you, see here: https://github.com/atomantic/generator-dockerize/commit/a79c26ceea4bacd0906f0f32dbb9b1751feb528e
+
+## 1.8.0
+  - Added VPN support
+  - Run `dev vpn_setup` before connecting to VPN to create docker-machine VM
+  - Run `dev vpn_env` to get the environment variables you need to access VM over VPN
+
 ## 1.7.0
   - `dev purge` is now interactive (allows you to choose which things you wish to purge/uninstall)
 
