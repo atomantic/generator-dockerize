@@ -129,3 +129,8 @@ This toolkit starts up docker-rsync along with the docker VM as a way of keeping
 
 ## 1.2.0
   - add `dev vpn` to fix OSX routing table after disconnecting from Cisco AnyConnect VPN client
+
+## Support
+Hey dude! Help me out for a couple of :beers:!
+
+[![Beerpay](https://beerpay.io/atomantic/generator-dockerize/badge.svg?style=beer-square)](https://beerpay.io/atomantic/generator-dockerize)
