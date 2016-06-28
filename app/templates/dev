@@ -10,7 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# DockerDev: 3.0.0                        #
+# DockerDev: 3.0.2                        #
 ###########################################
 
 
@@ -20,7 +20,6 @@ source ./dev.config
 # docker-compose will strip underscores from the app name to tack on _web
 APP_NAME_LOCAL=${APP_NAME//_/}"_web"
 REMOTE_NAME="$DOCKER_REPO/$APP_ORG/$APP_NAME"
-HOST_DOCKER_DAEMON_PORT=2376
 
 ###
 # echo helper functions
@@ -49,10 +48,6 @@ function warn() {
 }
 function error() {
   echo -e "$COL_RED[error]$COL_RESET "$1
-}
-function defaultError() {
-    error "sorry, we have not yet figured out an automated solution to this problem. Please investigate and pull-request to https://github.com/atomantic/generator-dockerize"
-    exit 1;
 }
 
 ###

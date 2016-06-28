@@ -1,6 +1,6 @@
 {
   "name": "generator-dockerize",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Yeoman Generator for Docker Application",
   "main": "app/index.js",
   "keywords": [
