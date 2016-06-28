@@ -40,7 +40,7 @@ function error() {
 
 function require_npm() {
     sourceNVM
-    nvm use stable
+    nvm use 4.4.6
     running "npm $1"
     npm list -g --depth 0 | grep $1@ > /dev/null
     if [[ $? != 0 ]]; then
@@ -89,8 +89,8 @@ case "$1" in
                 fi
             fi
             ok
-            action "nvm install stable"
-            require_nvm stable
+            action "nvm install"
+            require_nvm 4.4.6
             if [[ $? != 0 ]]; then
                 error "failed to install node! aborting..."
                 exit -1

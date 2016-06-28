@@ -2,19 +2,18 @@
 
 # Yeoman Docker Generator
 
-This Yeoman Generator will add a Docker scaffolding to your project, including Dockerfile, docker-compose and a dev script to simplify management of Docker.
-The `dev` script automates solutions to problems with running docker on OSX.
+This Yeoman Generator will add a Docker scaffolding to your project, including Dockerfile, docker-compose and a dev script to simplify management of Docker and app runtime.
+The `dev` script automates getting your application up and running, starting, stopping, and other misc. missing docker commands.
 
 ## Assumptions
 
-* Your application lives in `./app`
+* Your application lives in a subfolder of your git repo (e.g. `./app`)
 * You are on `OSX`
-* You are cool with `homebrew`
 
 ## Usage
 
 if you are totally new to nodejs, you can install via `./dev init`.
-This will install nvm (node version manager via Homebrew, then install node `stable` and run `npm install -g yo git://github.com/atomantic/generator-dockerize.git` for you).
+This will install nvm (node version manager via Homebrew, then install node `4.4.6` and run `npm install -g yo git://github.com/atomantic/generator-dockerize.git` for you).
 
 You can run the `dev init` script from curl like so:
 ```
@@ -71,26 +70,22 @@ To get updates to the dockerized dev toolkit after you run the generator, simply
 
 ## Contributing
 Please contribute! We welcome all pull-requests. The current setup makes certain assumptions that we probably don't always want. TODO:
-* add question on whether you use maven or destilli (or another option) for build, then drop the appropriate config file (or no file at all)
+* add question on whether you use a particular option for build, then drop the appropriate config file (or no file at all)
 * ask if you need a custom `dev.init.sh` script and handle that, removing it if you don't
 * ask what docker-compose configs should be added
 * ask what exec start command should be dropped in
 
 We could make this whole thing work from yo instead of requiring users to manually adjust their files after scaffolding :)
 
-## File Watch Support with Docker-Rsync
-
-This toolkit starts up docker-rsync along with the docker VM as a way of keeping your host OS code up-to-date inside the VM->Container. This is the gist of how that works:
-
-![Running](https://github.com/atomantic/generator-dockerize/raw/master/docs/docker-rsync.png)
-
 # HISTORY
 
 ## 3.0.0
   - Only using Native Docker for Mac/Win
-  - removed all VirtualBox management
-  - removed all VPN tomfoolery
-  - remove all rsync ugliness (now native)
+  - removed all `VirtualBox` management
+  - removed all `VPN` tomfoolery
+  - remove all `RSYNC` ugliness (now native)
+  - remove `./dev insecure` -- now set insecure registries in advanced settings in native docker app
+  - removed `VM_NAME`, `VM_CREATE_TIME`, `RSYNC` options from dev.config
 
 ## 2.2.0
   - Native Docker for Mac/Win is now supported with `export $DOCKER_NATIVE=true` -- this is temporary until this becomes an open standard method for running docker.

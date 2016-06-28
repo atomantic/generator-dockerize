@@ -3,7 +3,7 @@
 # Description: Run tests against the docker image
 #
 if [ $# -lt 3 ]; then
-  echo "Usage: $0 version image_name external_port internal_port (vm_name)"
+  echo "Usage: $0 version image_name external_port internal_port"
   exit 1
 fi
 
@@ -13,11 +13,10 @@ version=$1
 image_name=$2
 external_port=$3
 internal_port=$4
-vm_name=$5
 wd=$(pwd);
 
 function eko {
-    echo "[ $0 $version $image_name $external_port $internal_port $vm_name ] $1"
+    echo "[ $0 $version $image_name $external_port $internal_port ] $1"
 }
 function printTimeTaken {
     elapsed="$(($(date +%s)-start_time))"
@@ -59,13 +58,7 @@ echo "testing..."
 
 container_id=$(docker ps | grep $image_name | grep $version | awk '{print $1;}');
 
-if [[ -n "$vm_name" ]];then
-  ip_address=$(docker-machine ip $vm_name)
-else
-  # if we are running directly on Linux, we won't pass a vm_name into this script
-  # so just use the same host IP
-  ip_address=0.0.0.0
-fi
+ip_address=0.0.0.0
 
 ## assuming our app exposes an http service:
 eko "test curl: curl -v http://$ip_address:$external_port/"

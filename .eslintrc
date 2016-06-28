@@ -2,7 +2,9 @@
   "env": {
     "node": true
   },
-  "globals": {},
+  "globals": {
+    "describe": true
+  },
   "rules": {
     "quotes": [2, "single"]
   }

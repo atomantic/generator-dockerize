@@ -50,221 +50,41 @@ function warn() {
 function error() {
   echo -e "$COL_RED[error]$COL_RESET "$1
 }
-
-###
-# some bash install helpers
-###
-function require_cask() {
-    running "which $1"
-    which $1 > /dev/null 2>&1 | true
-    if [[ ${PIPESTATUS[0]} != 0 ]]; then
-        brew cask list $1 > /dev/null 2>&1 | true
-        if [[ ${PIPESTATUS[0]} != 0 ]]; then
-            action "brew cask install $1 $2"
-            brew cask install $1
-            if [[ $? != 0 ]]; then
-                error "failed to install $1! aborting..."
-                exit -1
-            fi
-        fi
-    fi
-    ok
-}
-
-function require_tap() {
-    running "checking brew tap $1"
-    brew tap | grep $1
-    if [[ $? != 0 ]]; then
-        action "brew tap $1"
-        brew tap $1
-        if [[ $? != 0 ]]; then
-            error "failed to add brew tap $1! aborting..."
-            exit -1
-        fi
-    fi
-    ok
-}
-function require_brew() {
-    running "which $1"
-    which $1 > /dev/null 2>&1 | true
-    if [[ ${PIPESTATUS[0]} != 0 ]]; then
-        action "brew install $1 $2"
-        brew install $1 $2
-        if [[ $? != 0 ]]; then
-            error "failed to install $1! aborting..."
-            exit -1
-        fi
-    fi
-    ok
-}
-
-
-function install_homebrew() {
-    running "checking homebrew"
-    brew_bin=$(which brew) 2>&1 > /dev/null
-    if [[ $? != 0 ]]; then
-        action "installing homebrew"
-        ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
-        if [[ $? != 0 ]]; then
-            error "unable to install homebrew, script $0 abort!"
-            exit -1
-        fi
-    fi
-    ok
-}
-
-function install_brewcask() {
-    running "checking brew-cask"
-    output=$(brew tap | grep cask)
-    if [[ $? != 0 ]]; then
-        action "installing brew-cask"
-        require_brew caskroom/cask/brew-cask
-    fi
-    ok
-}
-
-
-function checkInstall() {
-  running "checking install of $1"
-  case "$1" in
-    *)
-        which $1
-        ;;
-  esac
-  if [[ $? != 0 ]]; then
-    warn "$1 is not installed";
-    return 1;
-  fi
-  ok
-  return 0;
+function defaultError() {
+    error "sorry, we have not yet figured out an automated solution to this problem. Please investigate and pull-request to https://github.com/atomantic/generator-dockerize"
+    exit 1;
 }
 
 ###
 # Docker helpers
 ###
-function dockerStart(){
-
-    if [[ $DOCKER_NATIVE ]]; then
-      APPURL=http://localhost:$APP_PORT_EXTERNAL
-    else
-      APPURL=http://$(docker-machine ip $VM_NAME 2>/dev/null):$APP_PORT_EXTERNAL
-    fi
-
-    # instead of loading the VBox IP, we are routing localhost:$APP_PORT_EXTERNAL to VM
-    # APPURL=http://localhost:$APP_PORT_EXTERNAL
-
+function dockerStart() {
+    APPURL=http://localhost:$APP_PORT_EXTERNAL
     running "starting via 'docker-compose up'"
     docker-compose up &
-
-    docker images | grep $APP_NAME_LOCAL > /dev/null 2>&1
-
     # load in browser
     bot "OK, the app is booting up, we need to wait just a bit before trying to load it..."
     for i in $(seq $APP_BOOT_TIME 1);do
       bot "$i...";
     sleep 1;
     done
-
     if [[ $1 != "background" ]]; then
-
       bot "Launching: $APPURL"
       bot "If the app doesn't work, you can debug it by running the following:"
       echo "docker exec -i -t \$(docker ps | grep $APP_NAME_LOCAL | awk '{print \$1;}') bash"
       # open $APPURL:$APP_PORT_EXTERNAL
       open $APPURL
-
     fi
 }
-
-# setup port forwarding localhost:$APP_PORT_EXTERNAL -> VirtualBox
-function ensurePort(){
-  running "ensuring port forwarding: "$APP_NAME_LOCAL"_"$1
-  VBoxManage showvminfo $VM_NAME | grep $APP_NAME_LOCAL"_"$1 > /dev/null 2>&1
-  if [ $? != 0 ]; then
-    bot "adding port forwarding for $APP_NAME_LOCAL to $1"
-    VBoxManage controlvm $VM_NAME natpf1 $APP_NAME_LOCAL"_"$1,tcp,,$1,,$1
-  fi
-  ok
-}
-
-function dockerStop(){
-  running "stopping docker containers"
+function dockerStop() {
+  running "stopping containers"
   docker-compose stop > /dev/null 2>&1
   ok
-}
-
-function shellinit(){
-    running "shellinit"
-    #ensurePort 2376
-    #export DOCKER_HOST=tcp://127.0.0.1:2376;
-    eval "$(docker-machine env $VM_NAME)"
-    ok
-}
-
-# ensure that docker is running and mapped properly to the VM
-function ensureDocker() {
-
-    if [[ $DOCKER_NATIVE ]];then
-      return 1;
-    fi
-
-    running "ensuring $VM_NAME vm is running"
-
-    docker-machine ls | grep $VM_NAME > /dev/null 2>&1
-    if [[ $? != 0 ]]; then
-      # vm doesn't exist
-      docker-machine create -d virtualbox $VM_NAME
-    fi
-    docker-machine ls | grep $VM_NAME | grep Running > /dev/null 2>&1
-    if [[ $? != 0 ]]; then
-      bot "starting the vm"
-      docker-machine start $VM_NAME
-    fi
-    ok
-
-    shellinit
-    set +e
-    docker ps > /dev/null 2>&1;
-    if [[ $? != 0 ]]; then
-      defaultError
-    else
-     return 1;
-    fi
-}
-
-# OS_VERSION=$(sw_vers -productVersion);
-# OS_MAJOR=`echo $OS_VERSION | cut -d. -f1`
-# OS_MINOR=`echo $OS_VERSION | cut -d. -f2`
-# OS_PATCH=`echo $OS_VERSION | cut -d. -f3`
-function defaultError()
-{
-    error "sorry, we have not yet figured out an automated solution to this problem. Please investigate and pull-request to https://github.com/atomantic/generator-dockerize"
-    exit 1;
-}
-
-#Allows VM to connect to $DOCKER_REPO insecure registry
-function insecureRegistry()
-{
-    ensureDocker
-    REGISTRY=$DOCKER_REPO
-    if [ -n $1 ]; then
-      REGISTRY=$1
-    fi
-    echo "setting insecure registry: "$REGISTRY;
-    docker-machine ssh $VM_NAME "grep 'insecure-registry $REGISTRY' /var/lib/boot2docker/profile" > /dev/null 2>&1
-    if [[ $? != 0 ]]; then
-      docker-machine ssh $VM_NAME "sudo sed -i \"s/EXTRA_ARGS='/EXTRA_ARGS='\n--insecure-registry $DOCKER_REPO/\" /var/lib/boot2docker/profile"
-      docker-machine ssh $VM_NAME "sudo /etc/init.d/docker restart"
-      sleep 1
-      docker-machine restart $VM_NAME
-    fi
-    ok
 }
 
 case "$1" in
     clean)
         # purges the docker images relating to this app
-        ensureDocker
         docker ps -a | grep $APP_NAME_LOCAL
         if [[ $? == 0 ]]; then
           docker rm -f $(docker ps -a | grep $APP_NAME_LOCAL | awk '{print $1;}')
@@ -276,7 +96,6 @@ case "$1" in
         ok
         ;;
     free)
-        ensureDocker
         running "removing all stopped containers"
         docker rm $(docker ps -a -q) > /dev/null 2>&1
         ok
@@ -289,63 +108,21 @@ case "$1" in
 
         bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
+        docker > /dev/null 2>&1
+        if [[ $? != 0 ]]; then
+          error "docker is not running, have you downloaded it?"
+          bot "Please download and start docker from: https://docs.docker.com"
+          exit 1
+        fi
+        dir=$(pwd)
+        if [[ -e ./docker-compose.tmpl ]]; then
+          cat docker-compose.tmpl | sed "s~_SYNCDIR_~$dir/$APP_LOC~" > docker-compose.yml
+        fi
         # run dev.init.sh (if it exists)
         if [[ -e ./dev.init.sh ]]; then
           source ./dev.init.sh
         fi
-
-        read -r -p "are you running Native Docker for Mac/Windows? [y|N]" response
-        if [[ $response =~ ^(y|Y|yes) ]];then
-          dockerStart
-        else
-          need_tools=0
-          install_homebrew
-
-          needed_software=( "docker" "docker-compose" "docker-machine" )
-          for sft in "${needed_software[@]}"; do
-            checkInstall $sft
-            if [ $? != 0 ]; then
-              need_tools=1
-            fi
-          done
-
-          if [ $need_tools == 1 ]; then
-            install_brewcask
-            require_cask dockertoolbox
-            ok
-          fi
-
-          echo "launching quickstart shell. once this is done"
-          echo "cd "$(pwd)
-          echo "./dev start"
-
-          bash --login '/Applications/Docker/Docker Quickstart Terminal.app/Contents/Resources/Scripts/start.sh'
-        fi
-        ;;
-    insecure)
-        insecureRegistry $2
-        ;;
-    purge)
-        bot "dockerized-vm machine"
-        read -r -p "Shall I destroy this machine (with all docker images/containers in it)? [Y|n]" response
-        if [[ $response =~ ^(no|n|N) ]];then
-          bot "skipping..."
-        else
-          action "destroying the dockerized-vm machine"
-          docker-machine kill $VM_NAME;
-          docker-machine rm $VM_NAME;
-          ok
-        fi
-        bot "Docker Software"
-        read -r -p "Uninstall Docker Components? [y|N]" response
-        if [[ $response =~ ^(y|Y|yes) ]];then
-          action "uninstalling docker, docker-machine and docker-compose"
-          brew uninstall docker docker-machine docker-compose
-          ok
-        else
-          bot "skipping..."
-        fi
-        bot "run 'dev init' again"
+        dockerStart
         ;;
     rebuild)
         dockerStop
@@ -353,14 +130,12 @@ case "$1" in
         dockerStart $1
         ;;
     restart)
-        ensureDocker
         dockerStop
         dockerStart $1
         ;;
     shell)
-        ensureDocker
         if [ -z $1 ]; then
-          # run any version deployed to docker hub
+          # run any version deployed to docker registry
           bot "checking $REMOTE_NAME for version tag $2"
           docker run --rm=true -t $REMOTE_NAME:$2
           docker exec -i -t $(docker ps | grep $REMOTE_NAME:$2 | awk '{print $1;}') bash
@@ -374,16 +149,13 @@ case "$1" in
         fi
         ;;
     start)
-        ensureDocker
         dockerStart $1
         ;;
     stop)
-        ensureDocker
         dockerStop
         ;;
     test)
-        ensureDocker
-        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL $VM_NAME
+        build_scripts/test.sh 0.1.0 $APP_NAME_LOCAL $APP_PORT_EXTERNAL $APP_PORT_INTERNAL
         ok "done"
         ;;
     update)
@@ -406,8 +178,6 @@ case "$1" in
         echo "clean - remove locally built docker containers and images relating to this app"
         echo "free - remove clutter (stopped containers and untagged images)"
         echo "init - initialize your development environment (installing and running the app)"
-        echo "insecure - sets up Docker to connect to an insecure registry"
-        echo "purge - uninstall virtualbox, destroy the dockerized-vm machine and uninstall all docker software"
         echo "rebuild - rebuild the service"
         echo "restart - restart the service"
         echo "shell {version} - get a bash shell on the current running system or on a version from the hub"

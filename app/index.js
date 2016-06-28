@@ -56,11 +56,6 @@ module.exports = yeoman.generators.Base.extend({
         default: 5
       }, {
         type: 'input',
-        name: 'vmCreateTime',
-        message: 'About how many seconds does your docker image take to build (you can edit this later in dev.config)?',
-        default: 10
-      }, {
-        type: 'input',
         name: 'fromOS',
         message: 'What base OS does your app build with?',
         default: 'centos:7'
@@ -68,11 +63,6 @@ module.exports = yeoman.generators.Base.extend({
         type: 'confirm',
         name: 'init',
         message: 'Does your app require custom initialization beyond docker (sub-module update/build, npm install, etc) that you want to manage in a custom init script?',
-        default: false
-      }, {
-        type: 'confirm',
-        name: 'rsync',
-        message: 'Do you want to use rsync to sync files inside your docker containers?',
         default: false
       }, {
         type: 'confirm',
@@ -92,9 +82,7 @@ module.exports = yeoman.generators.Base.extend({
         internalPort: parseInt(props.port, 10),
         dockerHub: props.dockerHub,
         fromOS: props.fromOS,
-        rsync: props.rsync,
         appBootTime: props.appBootTime,
-        vmCreateTime: props.vmCreateTime,
         sampleApp: props.sampleApp
       };
 
@@ -146,10 +134,6 @@ module.exports = yeoman.generators.Base.extend({
         this.templatePath('test.sh'),
         this.destinationPath('test.sh'),
         this.userData
-      );
-      this.fs.copy(
-        this.templatePath('app/.rsyncignore'),
-        this.destinationPath(this.userData.apploc + '/.rsyncignore')
       );
       this.fs.copy(
         this.templatePath('app/exec'),
