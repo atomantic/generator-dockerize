@@ -86,6 +86,12 @@ This toolkit starts up docker-rsync along with the docker VM as a way of keeping
 
 # HISTORY
 
+## 3.0.0
+  - Only using Native Docker for Mac/Win
+  - removed all VirtualBox management
+  - removed all VPN tomfoolery
+  - remove all rsync ugliness (now native)
+
 ## 2.2.0
   - Native Docker for Mac/Win is now supported with `export $DOCKER_NATIVE=true` -- this is temporary until this becomes an open standard method for running docker.
 

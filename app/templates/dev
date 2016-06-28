@@ -10,8 +10,7 @@
 # https://github.com/atomantic/generator-dockerize
 #
 # @author Adam Eivy                       #
-# @maintainer Joseph Sturtevant           #
-# DockerDev: 2.2.0                        #
+# DockerDev: 3.0.0                        #
 ###########################################
 
 
@@ -21,7 +20,6 @@ source ./dev.config
 # docker-compose will strip underscores from the app name to tack on _web
 APP_NAME_LOCAL=${APP_NAME//_/}"_web"
 REMOTE_NAME="$DOCKER_REPO/$APP_ORG/$APP_NAME"
-RSYNC_URL="http://repo.tinycorelinux.net/"
 HOST_DOCKER_DAEMON_PORT=2376
 
 ###
@@ -146,7 +144,6 @@ function checkInstall() {
 ###
 function dockerStart(){
 
-    startRsync
     if [[ $DOCKER_NATIVE ]]; then
       APPURL=http://localhost:$APP_PORT_EXTERNAL
     else
@@ -161,12 +158,6 @@ function dockerStart(){
 
     docker images | grep $APP_NAME_LOCAL > /dev/null 2>&1
 
-    if [[ $? != 0 ]]; then
-      # give it time to create and launch the image
-      bot "giving docker-compose time to create the image..."
-      sleep $VM_CREATE_TIME
-    fi
-
     # load in browser
     bot "OK, the app is booting up, we need to wait just a bit before trying to load it..."
     for i in $(seq $APP_BOOT_TIME 1);do
@@ -178,9 +169,6 @@ function dockerStart(){
 
       bot "Launching: $APPURL"
       bot "If the app doesn't work, you can debug it by running the following:"
-      if [[ -z $DOCKER_NATIVE ]]; then
-        echo "\$(docker-machine env $VM_NAME > /dev/null);"
-      fi
       echo "docker exec -i -t \$(docker ps | grep $APP_NAME_LOCAL | awk '{print \$1;}') bash"
       # open $APPURL:$APP_PORT_EXTERNAL
       open $APPURL
@@ -200,7 +188,6 @@ function ensurePort(){
 }
 
 function dockerStop(){
-  stopRsync
   running "stopping docker containers"
   docker-compose stop > /dev/null 2>&1
   ok
@@ -245,56 +232,6 @@ function ensureDocker() {
     fi
 }
 
-function startRsync(){
-  if [[ $RSYNC != true ]];then
-    return 0
-  fi
-
-  running "starting rsync into $VM_NAME"
-  # only do one
-  stopRsync
-  dir=$(pwd);
-  docker-rsync -watch=true -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
-  if [[ $? != 0 ]]; then
-    bot "Fixing URL path in $VM_NAME"
-    if [[ "$(docker-machine ssh $VM_NAME 'cat /opt/tcemirror')" != "$RSYNC_URL" ]]; then
-      docker-machine ssh $VM_NAME "echo '$RSYNC_URL' > /opt/tcemirror"
-    fi
-    bot "Trying docker-rsync again"
-    docker-rsync -src="$dir/$APP_LOC" -dst="/Users/$(whoami)/rsync$dir/$APP_LOC" $VM_NAME &
-    if [[ $? != 0 ]]; then
-      warn "Something went wrong with loading rsync"
-    fi
-  fi
-  ok
-}
-
-function stopRsync(){
-  if [[ $RSYNC != true ]];then
-    return 0
-  fi
-  running "stopping rsync"
-  #Check if rsync is already running
-  if [[ $(ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}') == "" ]]; then
-    return 0;
-  fi
-  #Else kill any processes where rsync is running
-  kill -9 `ps ax | grep rsync | grep $(pwd) | grep -v grep | awk '{print $1}'`
-  ok
-  #Returning 1 stops script
-  return 1;
-}
-
-function ensureMount(){
-    # create an rsync directory in my home directory
-    # so we don't use up all the space on the virtual machine
-    # root path
-    # (/Users is already mounted as a share by VirtualBox)
-    if [ ! -d "/Users/$(whoami)/rsync" ]; then
-      mkdir -p /Users/$(whoami)/rsync
-    fi
-    # we will then use docker-rsync to rsync into this directory
-}
 # OS_VERSION=$(sw_vers -productVersion);
 # OS_MAJOR=`echo $OS_VERSION | cut -d. -f1`
 # OS_MINOR=`echo $OS_VERSION | cut -d. -f2`
@@ -352,18 +289,9 @@ case "$1" in
 
         bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
-        # setup docker-compose.yml
-        me=$(whoami)
-        dir=$(pwd)
-        if [[ -e ./docker-compose.tmpl ]]; then
-          cat docker-compose.tmpl | sed "s~_SYNCDIR_~/Users/$me/rsync$dir/$APP_LOC~" > docker-compose.yml
-        fi
         # run dev.init.sh (if it exists)
         if [[ -e ./dev.init.sh ]]; then
           source ./dev.init.sh
-        fi
-        if [[ $RSYNC == true ]];then
-          ensureMount
         fi
 
         read -r -p "are you running Native Docker for Mac/Windows? [y|N]" response
@@ -372,12 +300,8 @@ case "$1" in
         else
           need_tools=0
           install_homebrew
-          if [[ $RSYNC == true ]];then
-            require_tap synack/docker
-            require_brew docker-rsync
-          fi
 
-          needed_software=( "docker" "docker-compose" "docker-machine" "vboxmanage" )
+          needed_software=( "docker" "docker-compose" "docker-machine" )
           for sft in "${needed_software[@]}"; do
             checkInstall $sft
             if [ $? != 0 ]; then
@@ -402,9 +326,6 @@ case "$1" in
         insecureRegistry $2
         ;;
     purge)
-        bot "Starting Purge. ensuring rsync isn't running..."
-        stopRsync
-        ok
         bot "dockerized-vm machine"
         read -r -p "Shall I destroy this machine (with all docker images/containers in it)? [Y|n]" response
         if [[ $response =~ ^(no|n|N) ]];then
@@ -414,21 +335,6 @@ case "$1" in
           docker-machine kill $VM_NAME;
           docker-machine rm $VM_NAME;
           ok
-        fi
-        bot "VirtualBox Software"
-        read -r -p "Uninstall VirtualBox? [y|N]" response
-        if [[ $response =~ ^(y|Y|yes) ]];then
-          action "killing virtualbox"
-          pkill VBoxXPCOMIPCD
-          pkill VBoxSVC
-          pkill VBoxNetDHCP
-          pkill VBoxHeadless
-          ok
-          bot "uninstall virtualbox"
-          brew cask uninstall virtualbox
-          ok
-        else
-          bot "skipping..."
         fi
         bot "Docker Software"
         read -r -p "Uninstall Docker Components? [y|N]" response
