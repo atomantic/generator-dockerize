@@ -130,3 +130,8 @@ We could make this whole thing work from yo instead of requiring users to manual
 
 ## 1.2.0
   - add `dev vpn` to fix OSX routing table after disconnecting from Cisco AnyConnect VPN client
+
+## Support
+Hey dude! Help me out for a couple of :beers:!
+
+[![Beerpay](https://beerpay.io/atomantic/generator-dockerize/badge.svg?style=beer-square)](https://beerpay.io/atomantic/generator-dockerize)
