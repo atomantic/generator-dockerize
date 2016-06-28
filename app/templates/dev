@@ -59,6 +59,7 @@ function defaultError() {
 # Docker helpers
 ###
 function dockerStart() {
+    ensureDocker
     APPURL=http://localhost:$APP_PORT_EXTERNAL
     running "starting via 'docker-compose up'"
     docker-compose up &
@@ -80,6 +81,14 @@ function dockerStop() {
   running "stopping containers"
   docker-compose stop > /dev/null 2>&1
   ok
+}
+function ensureDocker() {
+  docker ps -q > /dev/null 2>&1
+  if [[ $? != 0 ]]; then
+    error "docker is not running, have you downloaded it?"
+    bot "Please download and start docker from: https://docs.docker.com"
+    exit 1
+  fi
 }
 
 case "$1" in
@@ -108,12 +117,7 @@ case "$1" in
 
         bot "working on "$APP_ORG/$APP_NAME:$APP_PORT_EXTERNAL;
 
-        docker > /dev/null 2>&1
-        if [[ $? != 0 ]]; then
-          error "docker is not running, have you downloaded it?"
-          bot "Please download and start docker from: https://docs.docker.com"
-          exit 1
-        fi
+        ensureDocker
         dir=$(pwd)
         if [[ -e ./docker-compose.tmpl ]]; then
           cat docker-compose.tmpl | sed "s~_SYNCDIR_~$dir/$APP_LOC~" > docker-compose.yml
