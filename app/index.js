@@ -1,20 +1,15 @@
 var _ = require('lodash');
-var yeoman = require('yeoman-generator');
+var Generator = require('yeoman-generator');
 var chalk = require('chalk');
 var yosay = require('yosay');
 var mkdirp = require('mkdirp');
 
-module.exports = yeoman.generators.Base.extend({
-  initializing: function() {
-    'use strict';
+module.exports = class extends Generator {
+  initializing() {
     this.pkg = require('../package.json');
-  },
-  userData: {},
-  prompting: function() {
-    'use strict';
-    var done = this.async();
+  }
 
-    // Have Yeoman greet the user.
+  prompting() {
     this.log(yosay(
       chalk.green('\\[._.]/\n') +
       'Welcome to the ' + chalk.yellow(this.pkg.name.replace('generator-', '')) + ' generator! ' +
@@ -72,7 +67,7 @@ module.exports = yeoman.generators.Base.extend({
       }
     ];
 
-    this.prompt(prompts, function(props) {
+    return this.prompt(prompts).then(function(props) {
       this.userData = {
         apploc: props.apploc,
         appname: props.appname,
@@ -85,71 +80,65 @@ module.exports = yeoman.generators.Base.extend({
         appBootTime: props.appBootTime,
         sampleApp: props.sampleApp
       };
-
-      done();
     }.bind(this));
-  },
+  }
 
-  writing: {
-    provision: function() {
-      'use strict';
-      mkdirp(this.userData.apploc);
+  writing() {
+    mkdirp(this.userData.apploc);
 
-      this.fs.copy(
-        this.templatePath('.dockerignore'),
-        this.destinationPath('.dockerignore')
-      );
+    this.fs.copy(
+      this.templatePath('.dockerignore'),
+      this.destinationPath('.dockerignore')
+    );
+    this.fs.copyTpl(
+      this.templatePath('.env'),
+      this.destinationPath('.env'),
+      this.userData
+    );
+    this.fs.copy(
+      this.templatePath('dev'),
+      this.destinationPath('dev')
+    );
+    this.fs.copyTpl(
+      this.templatePath('dev.config'),
+      this.destinationPath('dev.config'),
+      this.userData
+    );
+    if (this.userData.init) {
       this.fs.copyTpl(
-        this.templatePath('.env'),
-        this.destinationPath('.env'),
+        this.templatePath('dev.init.sh'),
+        this.destinationPath('dev.init.sh'),
         this.userData
       );
-      this.fs.copy(
-        this.templatePath('dev'),
-        this.destinationPath('dev')
-      );
-      this.fs.copyTpl(
-        this.templatePath('dev.config'),
-        this.destinationPath('dev.config'),
-        this.userData
-      );
-      if(this.userData.init){
-        this.fs.copyTpl(
-          this.templatePath('dev.init.sh'),
-          this.destinationPath('dev.init.sh'),
-          this.userData
-        );
-      }
-      this.fs.copyTpl(
-        this.templatePath('docker-compose.tmpl'),
-        this.destinationPath('docker-compose.tmpl'),
-        this.userData
-      );
-      this.fs.copyTpl(
-        this.templatePath('Dockerfile'),
-        this.destinationPath('Dockerfile'),
-        this.userData
-      );
-      this.fs.copyTpl(
-        this.templatePath('test.sh'),
-        this.destinationPath('test.sh'),
-        this.userData
-      );
-      this.fs.copy(
-        this.templatePath('app/exec'),
-        this.destinationPath(this.userData.apploc + '/exec')
-      );
-      if (this.userData.sampleApp) {
-        this.fs.copy(
-          this.templatePath('app/index.html'),
-          this.destinationPath(this.userData.apploc + '/index.html')
-        );
-      }
-
     }
-  },
-  end: function() {
-    'use strict';
+    this.fs.copyTpl(
+      this.templatePath('docker-compose.tmpl'),
+      this.destinationPath('docker-compose.tmpl'),
+      this.userData
+    );
+    this.fs.copyTpl(
+      this.templatePath('Dockerfile'),
+      this.destinationPath('Dockerfile'),
+      this.userData
+    );
+    this.fs.copyTpl(
+      this.templatePath('test.sh'),
+      this.destinationPath('test.sh'),
+      this.userData
+    );
+    this.fs.copy(
+      this.templatePath('app/exec'),
+      this.destinationPath(this.userData.apploc + '/exec')
+    );
+    if (this.userData.sampleApp) {
+      this.fs.copy(
+        this.templatePath('app/index.html'),
+        this.destinationPath(this.userData.apploc + '/index.html')
+      );
+    }
+  }
+
+  end() {
     this.log(
       '\n\n' +
       chalk.green('\\[._.]/\n') +
@@ -160,4 +149,4 @@ module.exports = yeoman.generators.Base.extend({
       'to bootstrap your docker environment!'
     );
   }
-});
+};
